@@ -17,7 +17,7 @@
  * if not, see <http://www.gnu.org/licenses/>. */
 
 /**
- * Embed a contact form onto any page
+ * Embed a send email form onto any page
  * @license GNU General Public License 3 <http://www.gnu.org/licenses/>
  * @author Bob Baddeley <bob@bobbaddeley.com>
  * @author Marvin Thomas Rabe <mrabe@marvinrabe.de>
@@ -29,7 +29,7 @@ require_once(DOKU_PLUGIN.'syntax.php');
 require_once(DOKU_INC.'inc/auth.php');
 require_once(dirname(__file__).'/recaptchalib.php');
 
-class syntax_plugin_moderncontact extends DokuWiki_Syntax_Plugin {
+class syntax_plugin_groupmail extends DokuWiki_Syntax_Plugin {
 
 	public static $captcha = false;
 	public static $lastFormId = 1;
@@ -48,8 +48,8 @@ class syntax_plugin_moderncontact extends DokuWiki_Syntax_Plugin {
 			'email'  => 'mrabe@marvinrabe.de',
 			'date'	 => '2013-01-25',
 			'name'	 => 'Modern Contact Plugin',
-			'desc'	 => 'Creates a contact form to email the webmaster. Secured with recaptcha.',
-			'url'	 => 'https://github.com/marvinrabe/dokuwiki-contact',
+			'desc'	 => 'Creates an email form. Secured with recaptcha.',
+			'url'	 => 'https://github.com/bzfwunde/dokuwiki-groupmail',
 		);
 	}
 
@@ -78,7 +78,7 @@ class syntax_plugin_moderncontact extends DokuWiki_Syntax_Plugin {
  	 * Connect pattern to lexer.
  	 */
 	public function connectTo($mode) {
-		$this->Lexer->addSpecialPattern('\{\{contact>[^}]*\}\}',$mode,'plugin_moderncontact');
+		$this->Lexer->addSpecialPattern('\{\{groupmail>[^}]*\}\}',$mode,'plugin_groupmail');
 	}
 
 	/**
@@ -98,7 +98,7 @@ class syntax_plugin_moderncontact extends DokuWiki_Syntax_Plugin {
 			$splitparam = explode('=',$param);
 			//multiple targets/profils possible for the email
 			//add multiple to field in the dokuwiki page code
-			// example : {{contact>to=profile1|to=profile2|subject=Feedback from Site}}
+			// example : {{groupmail>to=profile1|to=profile2|subject=Feedback from Site}}
 			if ($splitparam[0]=='toemail'){
 				if (isset($data[$splitparam[0]])){
 					$data[$splitparam[0]] .= ",".$splitparam[1]; //it is a "toemail" param but not the first
@@ -130,11 +130,11 @@ class syntax_plugin_moderncontact extends DokuWiki_Syntax_Plugin {
 	public function render($mode, &$renderer, $data) {
 		if($mode == 'xhtml'){
 			// Define unique form id
-			$this->formId = syntax_plugin_moderncontact::$lastFormId++;
+			$this->formId = syntax_plugin_groupmail::$lastFormId++;
 
 			// Disable cache
 			$renderer->info['cache'] = false;
-			$renderer->doc .= $this->_contact($data);
+			$renderer->doc .= $this->_groupmail($data);
 			return true;
 		}
 		return false;
@@ -143,7 +143,7 @@ class syntax_plugin_moderncontact extends DokuWiki_Syntax_Plugin {
 	/**
 	 * Verify and send email content.´
 	 */
-	protected function _send_contact($captcha=false){
+	protected function _send_groupmail($captcha=false){
 		global $conf;
 		global $auth;
 		global $USERINFO;
@@ -217,8 +217,8 @@ class syntax_plugin_moderncontact extends DokuWiki_Syntax_Plugin {
 			$this->_set_error('content', $lang["content"]);
 
 		// checks recaptcha answer
-		if($conf['plugin']['moderncontact']['captcha'] == 1 && $captcha == true) {
-			$resp = recaptcha_check_answer ($conf['plugin']['moderncontact']['recaptchasecret'],
+		if($conf['plugin']['groupmail']['captcha'] == 1 && $captcha == true) {
+			$resp = recaptcha_check_answer ($conf['plugin']['groupmail']['recaptchasecret'],
 						$_SERVER["REMOTE_ADDR"],
 						$_POST["recaptcha_challenge_field"],
 						$_POST["recaptcha_response_field"]);
@@ -311,21 +311,21 @@ class syntax_plugin_moderncontact extends DokuWiki_Syntax_Plugin {
 	}
 
 	/**
-	 * Does the contact form xhtml creation.
+	 * Does the groupmail form xhtml creation.
 	 */
-	protected function _contact($data){
+	protected function _groupmail($data){
 		global $conf;
 		global $USERINFO;
 
 		// Is there none captche on the side?
-		$captcha = ($conf['plugin']['moderncontact']['captcha'] == 1 && syntax_plugin_moderncontact::$captcha == false)?true:false;
+		$captcha = ($conf['plugin']['groupmail']['captcha'] == 1 && syntax_plugin_groupmail::$captcha == false)?true:false;
 
 		$ret = "<form action=\"".$_SERVER['REQUEST_URI']."#form-".$this->formId."\" method=\"POST\"><a name=\"form-".$this->formId."\"></a>";
 		$ret .= "<table class=\"inline\">";
 
 		// Send message and give feedback
 		if (isset($_POST['submit-form-'.$this->formId]))
-			if($this->_send_contact($captcha, $data))
+			if($this->_send_groupmail($captcha, $data))
 				$ret .= $this->_show_message();
 
 		// Build table
@@ -347,9 +347,9 @@ class syntax_plugin_moderncontact extends DokuWiki_Syntax_Plugin {
 			}
 			$ret .= "<tr><td colspan=\"2\">"
 			. "<script type=\"text/javascript\">var RecaptchaOptions = { lang : '".$conf['lang']."', "
-			. "theme : '".$conf['plugin']['moderncontact']['recaptchalayout']."' };</script>"
-			. recaptcha_get_html($conf['plugin']['moderncontact']['recaptchakey'])."</td></tr>";
-			syntax_plugin_moderncontact::$captcha = true;
+			. "theme : '".$conf['plugin']['groupmail']['recaptchalayout']."' };</script>"
+			. recaptcha_get_html($conf['plugin']['groupmail']['recaptchakey'])."</td></tr>";
+			syntax_plugin_groupmail::$captcha = true;
 		}
 
 		$ret .= "</table><p>";
@@ -366,7 +366,7 @@ class syntax_plugin_moderncontact extends DokuWiki_Syntax_Plugin {
 		else if ( isset($data['toemail']) )
 			$ret .= "<input type=\"hidden\" name=\"toemail\" value=\"".$data['toemail']."\" />";
 		$ret .= "<input type=\"hidden\" name=\"do\" value=\"show\" />";
-		$ret .= "<input type=\"submit\" name=\"submit-form-".$this->formId."\" value=\"".$this->getLang("contact")."\" />";
+		$ret .= "<input type=\"submit\" name=\"submit-form-".$this->formId."\" value=\"".$this->getLang("groupmail")."\" />";
 		$ret .= "</p></form>";
 
 		return $ret;
@@ -377,7 +377,7 @@ class syntax_plugin_moderncontact extends DokuWiki_Syntax_Plugin {
 	 */
 	protected function _show_message() {
 		return '<tr><td colspan="2">'
-		. '<p class="'.(($this->status == 0)?'contact_error':'contact_success').'">'.$this->statusMessage.'</p>'
+		. '<p class="'.(($this->status == 0)?'groupmail_error':'groupmail_success').'">'.$this->statusMessage.'</p>'
 		. '</td></tr>';
 	}
 

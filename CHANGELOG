@@ -6,7 +6,7 @@
 * Added support for auto-control of from by setting autofrom=true
 * Disabled overriding subject when setting subject=...
   by no longer showing the subject input text box
-* changed plugin name to 'groupmal' (from 'moderncontact.)
+* changed plugin name to 'groupmail' (from 'moderncontact.)
 
 ------------------------------------------------
 

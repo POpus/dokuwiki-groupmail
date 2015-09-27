@@ -9,7 +9,7 @@
  */
 
 $conf['default'] = 'bzfwunde@gmail.com';
-$meta['setmail'] = ':sentmail';
+$meta['sentgroupmail'] = ':sentgroupmail:log';
 $conf['captcha'] = 0;
 $conf['recaptchakey'] = '';
 $conf['recaptchasecret'] = '';

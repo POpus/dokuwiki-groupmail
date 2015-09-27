@@ -48,40 +48,40 @@ h2. Usage
 
 p. The integration is the same as in the plugin by Baddeley. Simply use this code:
 
-bc. {{contact>}}
+bc. {{groupmail>}}
 
-p. This will create a contact form with a "name","email address", "subject" and "comment" field. It will send an email to whatever the default value is. If you enabled the captcha by default, than it will also show the well known reCaptcha input fields.
+p. This will create a groupmail form with a "name","email address", "subject" and "comment" field. It will send an email to whatever the default value is. If you enabled the captcha by default, than it will also show the well known reCaptcha input fields.
 
 p. You can also specify several parameters. If you only need one parameter you simply use:
 
-bc. {{contact>subject=Feedback from Site}}
+bc. {{groupmail>subject=Feedback from Site}}
 
 p. or join multiple of them with a | character:
 
-bc. {{contact>toemail=example@mail.com|subject=Feedback from Site}}
+bc. {{groupmail>toemail=example@mail.com|subject=Feedback from Site}}
 
 p. or email to dokuwiki users (via dokuwiki login names)
 
-bc. {{contact>touser=dokuwikiuser}}
+bc. {{groupmail>touser=dokuwikiuser}}
 
 p. or email to dokuwiki group members (via dokuwiki group names
 
-bc. {{contact>togroup=dokuwikigroup}}
+bc. {{groupmail>togroup=dokuwikigroup}}
 
 p. Don't allow to override the sender name or email
 
-bc. {{contact>autofrom=true}}
+bc. {{groupmail>autofrom=true}}
 
 p. Preset a text in the email content:
 
-bc. {{contact>content=Feedback for the wiki:}}
+bc. {{groupmail>content=Feedback for the wiki:}}
 
 
 
 h3. Available parameters
 
-| subject | If the subject is specified in the parameters then it is not a field on the contact form. |
-| autofrom=true | If specified, the sender fields are not shown in the contact form. |
+| subject | If the subject is specified in the parameters then it is not a field on the email form. |
+| autofrom=true | If specified, the sender fields are not shown in the email form. |
 | toemail= | a (list of) email address(es) to sent email to. |
 | touser= | a (list of) dokuwiki user account names to send email to. |
 | togroup= | a (list of) dokuwiki group names to send email to. |
