@@ -27,9 +27,7 @@ if(!defined('DOKU_INC')) define('DOKU_INC',realpath(dirname(__FILE__).'/../../')
 if(!defined('DOKU_PLUGIN')) define('DOKU_PLUGIN',DOKU_INC.'lib/plugins/');
 require_once(DOKU_PLUGIN.'syntax.php');
 require_once(DOKU_INC.'inc/auth.php');
-/*
 require_once(dirname(__file__).'/recaptchalib.php');
- */
 
 class syntax_plugin_groupmail extends DokuWiki_Syntax_Plugin {
 
