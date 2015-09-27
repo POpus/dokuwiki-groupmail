@@ -1,6 +1,11 @@
-h1. Modern Contact Plugin
+h1. Group email plugin
 
-p. In the search for a contact form for Dokuwiki I only found that of Bob Baddeley (http://bobbaddeley.com/). It is quite good, although a bit outdated.
+p. In the search for a contact form for Dokuwiki I only found that of By Marvin
+Thomas Rabe (https://github.com/marvinrabe/dokuwiki-contact) which I started
+using.  However, I wanted to use it to send out email to a group of people which
+is not quite supported.  I therefore started extending it, and changing the
+usage somewhat.  Thus I could not contribute my changes to the existing pluging
+since an update would render existing wiki pages unusable.
 
 h2. Features
 
@@ -49,14 +54,36 @@ p. This will create a contact form with a "name","email address", "subject" and 
 
 p. You can also specify several parameters. If you only need one parameter you simply use:
 
-bc. {{contact>subj=Feedback from Site}}
+bc. {{contact>subject=Feedback from Site}}
 
 p. or join multiple of them with a | character:
 
-bc. {{contact>to=profile1|subj=Feedback from Site}}
+bc. {{contact>toemail=example@mail.com|subject=Feedback from Site}}
+
+p. or email to dokuwiki users (via dokuwiki login names)
+
+bc. {{contact>touser=dokuwikiuser}}
+
+p. or email to dokuwiki group members (via dokuwiki group names
+
+bc. {{contact>togroup=dokuwikigroup}}
+
+p. Don't allow to override the sender name or email
+
+bc. {{contact>autofrom=true}}
+
+p. Preset a text in the email content:
+
+bc. {{contact>content=Feedback for the wiki:}}
+
+
 
 h3. Available parameters
 
-| subj | If the subject is specified in the parameters then it is not a field on the contact form. |
-| to | If you choose another profile then emails will be send to the profile email address. You have to specify other profiles before you can use them. |
+| subject | If the subject is specified in the parameters then it is not a field on the contact form. |
+| autofrom=true | If specified, the sender fields are not shown in the contact form. |
+| toemail= | a (list of) email address(es) to sent email to. |
+| touser= | a (list of) dokuwiki user account names to send email to. |
+| togroup= | a (list of) dokuwiki group names to send email to. |
+| content= | Text that should be prefilled in the email body. |
 | captcha | If set to true, the captcha will be enabled. Set it on false to disable it. You must activate the captcha by default in order to change its status with this parameter. |
