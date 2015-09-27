@@ -23,6 +23,13 @@ $lang["email"] = 'Your Email';
 $lang["subject"] = 'Subject';
 $lang["content"] = 'Message';
 $lang["send"] = 'Submit';
+$lang["date"] = 'Date';
+$lang["time"] = 'Time';
+$lang["from"] = 'From';
+$lang["sent by"] = 'sent by';
+$lang["via"] = 'via DokuWiki at '.wl($ID,'',true)."\n";
+$lang["viewonline"] = 'view the message online at ';
+$lang["missingpermissions"] = 'this message could not be archived due to missing permissions.';
 
 // error messages
 $lang["error"]["unknown"] = 'Mail not sent. Please contact the administrator.';

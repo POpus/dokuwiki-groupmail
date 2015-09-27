@@ -9,16 +9,13 @@ since an update would render existing wiki pages unusable.
 
 h2. Features
 
-p. It is nearly the same form like that by Bob Baddeley, except:
+p. Extended from moderncontact by Thomas Rabe but:
 
-# reCaptcha instead of "Enter HUMAN to verify."
-# Captcha can be disabled.
-# Improved configuration.
-# Improved anti cache work-around.
-# Intelligent email address checkup.
-# No annoying JavaScript-alerts.
-# It jumps back to the form after submitting.
-# Name and email field are filled if user is logged in.
+* support emailing to emails
+* support emailing to dokuwiki group members
+* archiving sent emails
+* support force sending with registered identity
+* support presetting text for email message
 
 p. If you have some more ideas, feel free to contact me.
 
@@ -68,9 +65,9 @@ p. or email to dokuwiki group members (via dokuwiki group names
 
 bc. {{groupmail>togroup=dokuwikigroup}}
 
-p. Don't allow to override the sender name or email
+p. Don't allow to override the sender name or email, but use registered user
 
-bc. {{groupmail>autofrom=true}}
+bc. {{groupmail>autofrom}}
 
 p. Preset a text in the email content:
 
@@ -84,11 +81,11 @@ bc. {{groupmail>sendlog=:path:to:log:file}}
 
 h3. Available parameters
 
-| subject | If the subject is specified in the parameters then it is not a field on the email form. |
-| autofrom=true | If specified, the sender fields are not shown in the email form. |
-| toemail= | a (list of) email address(es) to sent email to. |
-| touser= | a (list of) dokuwiki user account names to send email to. |
-| togroup= | a (list of) dokuwiki group names to send email to. |
-| content= | Text that should be prefilled in the email body. |
-| sendlog= | Define a dokuwiki file where all emails are prepended to. |
+| subject=... | If the subject is specified in the parameters then it is not a field on the email form. |
+| autofrom | If specified, the sender fields are not shown in the email form. |
+| toemail=... | a (list of) email address(es) to sent email to. |
+| touser=... | a (list of) dokuwiki user account names to send email to. |
+| togroup=... | a (list of) dokuwiki group names to send email to. |
+| content=... | Text that should be prefilled in the email body. |
+| sendlog=... | Define a dokuwiki file where all emails are prepended to. |
 | captcha | If set to true, the captcha will be enabled. Set it on false to disable it. You must activate the captcha by default in order to change its status with this parameter. |

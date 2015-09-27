@@ -46,11 +46,11 @@ class syntax_plugin_groupmail extends DokuWiki_Syntax_Plugin {
 	 */
 	public function getInfo(){
 		return array(
-			'author' => 'Marvin Thomas Rabe',
-			'email'  => 'mrabe@marvinrabe.de',
-			'date'	 => '2013-01-25',
-			'name'	 => 'Modern Contact Plugin',
-			'desc'	 => 'Creates an email form. Secured with recaptcha.',
+			'author' => 'Roland Wunderling',
+			'email'  => 'bzfwunde@gmail.com',
+			'date'	 => '2015-09-27',
+			'name'	 => 'Group email plugin',
+			'desc'	 => 'Group email with archiving.',
 			'url'	 => 'https://github.com/bzfwunde/dokuwiki-groupmail',
 		);
 	}
@@ -90,7 +90,7 @@ class syntax_plugin_groupmail extends DokuWiki_Syntax_Plugin {
 		if (isset($_REQUEST['comment']))
 		    return false;
 
-		$match = substr($match,10,-2); //strip markup from start and end
+		$match = substr($match,12,-2); //strip markup from start and end
 
 		$data = array();
 
@@ -119,8 +119,15 @@ class syntax_plugin_groupmail extends DokuWiki_Syntax_Plugin {
 				}else{
 					$data[$splitparam[0]] = $splitparam[1]; // it is the first "togroup" param
 				}
+			} else if ($splitparam[0]=='autofrom'){
+                           // If only 'autofrom' is set but no 'autofrom=...', 
+                           // default to 'autofrom=true'
+                           if (!isset($data[$splitparam[0]]))
+                              $data[$splitparam[0]] = 'true';
+                           else
+		              $data[$splitparam[0]] = $splitparam[1]; // it is not a "to" param
 			}else{
-				$data[$splitparam[0]] = $splitparam[1]; // it is not a "to" param
+				$data[$splitparam[0]] = $splitparam[1]; // All other parameters
 			}
 		}
 		return $data;
@@ -170,23 +177,23 @@ class syntax_plugin_groupmail extends DokuWiki_Syntax_Plugin {
                      if ( auth_quickaclcheck($targetpage) >= AUTH_EDIT ) {
                         $oldrecord = rawWiki($targetpage);
                         $newrecord = '====== '.$subject.' ======'."\n\n";
-                        $newrecord .= '  * Date: '.date('Y-m-d')."\n";
-                        $newrecord .= '  * Time: '.date('H:i:s')."\n";
-                        $newrecord .= '  * From: '.$name.' <'.$email.'>'."\n";
+                        $newrecord .= '  * '.$this->getLang("date").': '.date('Y-m-d')."\n";
+                        $newrecord .= '  * '.$this->getLang("time").': '.date('H:i:s')."\n";
+                        $newrecord .= '  * '.$this->getLang("from").': '.$name.' <'.$email.'>'."\n";
                         $newrecord .= "\n";
                         $newrecord .= $comment."\n\n";
                         saveWikiText($targetpage, $newrecord.$oldrecord, "New entry", true);
-                        $lastline .= 'view this message online at '.wl($ID,'', true).'?id='.$targetpage."\r\n\n\n";
+                        $lastline .= $this->getLang("viewonline").wl($ID,'', true).'?id='.$targetpage."\r\n\n\n";
                      }
                      else {
-                        $lastline .= 'this email was not be logged due to missing permissions.';
+                        $lastline .= $this->getLang("missingpermissions");
                      }
                 }
 
 		$comment .= "\n\n";
                 $comment .= '---------------------------------------------------------------'."\n";
-                $comment .= 'sent by '.$name.' <'.$email.'>'."\n";
-                $comment .= 'via DokuWiki at '.wl($ID,'',true)."\n";
+                $comment .= $this->getLang("sent by").$name.' <'.$email.'>'."\n";
+                $comment .= $this->getLang("via").wl($ID,'',true)."\n";
                 $comment .= $lastline;
 
 		if (isset($_REQUEST['toemail'])){

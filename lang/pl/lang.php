@@ -23,6 +23,15 @@ $lang["subject"] = 'Temat';
 $lang["content"] = 'Wiadomość';
 $lang["send"] = 'Wyślij';
 
+// FIXME - provide translation:
+$lang["date"] = 'Date';
+$lang["time"] = 'Time';
+$lang["from"] = 'From';
+$lang["sent by"] = 'sent by';
+$lang["via"] = 'via DokuWiki at '.wl($ID,'',true)."\n";
+$lang["viewonline"] = 'view the message online at ';
+$lang["missingpermissions"] = 'this message could not be archived due to missing permissions.';
+
 // error messages
 $lang["error"]["unknown"] = 'E-mail nie został wysłany. Skontaktuj się z administratorem.';
 $lang["error"]["name"] = 'Wpisz nazwę. Powinna wynosić co najmniej 2 znaki.';

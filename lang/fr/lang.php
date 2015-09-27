@@ -24,6 +24,15 @@ $lang["subject"] = 'Sujet';
 $lang["content"] = 'Message';
 $lang["send"] = 'Envoyer';
 
+// FIXME - provide translation:
+$lang["date"] = 'Date';
+$lang["time"] = 'Time';
+$lang["from"] = 'From';
+$lang["sent by"] = 'sent by';
+$lang["via"] = 'via DokuWiki at '.wl($ID,'',true)."\n";
+$lang["viewonline"] = 'view the message online at ';
+$lang["missingpermissions"] = 'this message could not be archived due to missing permissions.';
+
 // error messages
 
 $lang["error"]["unknown"] = 'Email non envoyé. Merci de contacter votre administrateur.'; 
