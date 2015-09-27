@@ -76,6 +76,10 @@ p. Preset a text in the email content:
 
 bc. {{groupmail>content=Feedback for the wiki:}}
 
+p. Define a log dokuwiki file where all emails are logged to for later reference.
+
+bc. {{groupmail>sendlog=:path:to:log:file}}
+
 
 
 h3. Available parameters
@@ -86,4 +90,5 @@ h3. Available parameters
 | touser= | a (list of) dokuwiki user account names to send email to. |
 | togroup= | a (list of) dokuwiki group names to send email to. |
 | content= | Text that should be prefilled in the email body. |
+| sendlog= | Define a dokuwiki file where all emails are prepended to. |
 | captcha | If set to true, the captcha will be enabled. Set it on false to disable it. You must activate the captcha by default in order to change its status with this parameter. |

@@ -7,6 +7,7 @@
 * Disabled overriding subject when setting subject=...
   by no longer showing the subject input text box
 * changed plugin name to 'groupmail' (from 'moderncontact.)
+* added sendlog=..., to setup a log page where sent emails are logged
 
 ------------------------------------------------
 

@@ -9,7 +9,7 @@
  */
 
 $meta['default'] = array('string');
-$meta['sentgroupmail'] = array('string');
+$meta['sendlog'] = array('string');
 $meta['captcha'] = array('onoff');
 $meta['recaptchakey'] = array('string');
 $meta['recaptchasecret'] = array('string');

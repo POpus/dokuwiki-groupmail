@@ -8,4 +8,5 @@ desc   Allows to include mailing form to wiki page from which to send
         - list of email addresses
         - list of dokuwiki users
         - list of dokuwiki groups
+       and maintains a log of sent emails
 url    https://github.com/bzfwunde/dokuwiki-groupmail

@@ -145,11 +145,11 @@ class syntax_plugin_groupmail extends DokuWiki_Syntax_Plugin {
 	/**
 	 * Verify and send email content.´
 	 */
-	protected function _send_groupmail($captcha=false){
+	protected function _send_groupmail($captcha=false, $sendlog){
 		global $conf;
 		global $auth;
 		global $USERINFO;
-		global $ID;
+		// global $ID;
 
 		$lang = $this->getLang("error");
 
@@ -157,13 +157,38 @@ class syntax_plugin_groupmail extends DokuWiki_Syntax_Plugin {
                 $name  = $_POST['name'];
                 $email = $_POST['email'];
 		$subject = $_POST['subject'];
-                /*
-		$comment  = 'Sender: '.$name.
-		$comment .= ' <'.$email.'>'."\r\n\n";
-                 */
 		$comment = $_POST['content'];
-		$comment .= "\r\n\n";
-                $comment .= '-- sent from '.wl($ID,' ', true).' by '.$name.' <'.$_POST['email'].'>';
+
+		// comment entered?
+		if(strlen($_POST['content']) < 10)
+			$this->_set_error('content', $lang["content"]);
+
+                // record email in log
+                $lastline = '';
+                if ( isset($sendlog)  &&  $sendlog != '' ) {
+                     $targetpage = htmlspecialchars(trim($sendlog));
+                     if ( auth_quickaclcheck($targetpage) >= AUTH_EDIT ) {
+                        $oldrecord = rawWiki($targetpage);
+                        $newrecord = '====== '.$subject.' ======'."\n\n";
+                        $newrecord .= '  * Date: '.date('Y-m-d')."\n";
+                        $newrecord .= '  * Time: '.date('H:i:s')."\n";
+                        $newrecord .= '  * From: '.$name.' <'.$email.'>'."\n";
+                        $newrecord .= "\n";
+                        $newrecord .= $comment."\n\n";
+                        saveWikiText($targetpage, $newrecord.$oldrecord, "New entry", true);
+                        $lastline .= 'view this message online at '.wl($ID,'', true).'?id='.$targetpage."\r\n\n\n";
+                     }
+                     else {
+                        $lastline .= 'this email was not be logged due to missing permissions.';
+                     }
+                }
+
+		$comment .= "\n\n";
+                $comment .= '---------------------------------------------------------------'."\n";
+                $comment .= 'sent by '.$name.' <'.$email.'>'."\n";
+                $comment .= 'via DokuWiki at '.wl($ID,'',true)."\n";
+                $comment .= $lastline;
+
 		if (isset($_REQUEST['toemail'])){
 			//multiple targets/profils possible for the email
 			$usersList = explode(',',$_POST['toemail']); 
@@ -213,10 +238,6 @@ class syntax_plugin_groupmail extends DokuWiki_Syntax_Plugin {
 		// email correctly entered?
 		if(!$this->_check_email_address($email))
 			$this->_set_error('email', $lang["email"]);
-
-		// comment entered?
-		if(strlen($_POST['content']) < 10)
-			$this->_set_error('content', $lang["content"]);
 
 		// checks recaptcha answer
 		if($conf['plugin']['groupmail']['captcha'] == 1 && $captcha == true) {
@@ -319,15 +340,22 @@ class syntax_plugin_groupmail extends DokuWiki_Syntax_Plugin {
 		global $conf;
 		global $USERINFO;
 
-		// Is there none captche on the side?
+		// Is there none captcha on the side?
 		$captcha = ($conf['plugin']['groupmail']['captcha'] == 1 && syntax_plugin_groupmail::$captcha == false)?true:false;
+
+                // Setup send log destination
+		if      ( isset($data['sendlog']) )
+                   $sendlog = $data['sendlog'];
+                else if ( isset($conf['plugin']['groupmail']['sendlog'])  &&
+                          '' != $conf['plugin']['groupmail']['sendlog']     )
+                   $sendlog = $conf['plugin']['groupmail']['sendlog'];
 
 		$ret = "<form action=\"".$_SERVER['REQUEST_URI']."#form-".$this->formId."\" method=\"POST\"><a name=\"form-".$this->formId."\"></a>";
 		$ret .= "<table class=\"inline\">";
 
 		// Send message and give feedback
 		if (isset($_POST['submit-form-'.$this->formId]))
-			if($this->_send_groupmail($captcha, $data))
+			if($this->_send_groupmail($captcha, $sendlog))
 				$ret .= $this->_show_message();
 
 		// Build table
