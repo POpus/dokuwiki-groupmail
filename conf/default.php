@@ -8,7 +8,7 @@
  * @author Roland Wunderling <bzfwunde@gmail.com>
  */
 
-$conf['default'] = 'bzfwunde@gmail.com';
+$conf['default'] = 'Roland@localhost';
 $conf['sendlog'] = ':groupmail:log';
 $conf['captcha'] = 0;
 $conf['recaptchakey'] = '';
