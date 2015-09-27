@@ -27,7 +27,9 @@ if(!defined('DOKU_INC')) define('DOKU_INC',realpath(dirname(__FILE__).'/../../')
 if(!defined('DOKU_PLUGIN')) define('DOKU_PLUGIN',DOKU_INC.'lib/plugins/');
 require_once(DOKU_PLUGIN.'syntax.php');
 require_once(DOKU_INC.'inc/auth.php');
+/*
 require_once(dirname(__file__).'/recaptchalib.php');
+ */
 
 class syntax_plugin_groupmail extends DokuWiki_Syntax_Plugin {
 
@@ -98,7 +100,7 @@ class syntax_plugin_groupmail extends DokuWiki_Syntax_Plugin {
 			$splitparam = explode('=',$param);
 			//multiple targets/profils possible for the email
 			//add multiple to field in the dokuwiki page code
-			// example : {{groupmail>to=profile1|to=profile2|subject=Feedback from Site}}
+			// example : {{groupmail>to*=profile1|subject=Feedback from Site}}
 			if ($splitparam[0]=='toemail'){
 				if (isset($data[$splitparam[0]])){
 					$data[$splitparam[0]] .= ",".$splitparam[1]; //it is a "toemail" param but not the first
@@ -366,7 +368,7 @@ class syntax_plugin_groupmail extends DokuWiki_Syntax_Plugin {
 		else if ( isset($data['toemail']) )
 			$ret .= "<input type=\"hidden\" name=\"toemail\" value=\"".$data['toemail']."\" />";
 		$ret .= "<input type=\"hidden\" name=\"do\" value=\"show\" />";
-		$ret .= "<input type=\"submit\" name=\"submit-form-".$this->formId."\" value=\"".$this->getLang("groupmail")."\" />";
+		$ret .= "<input type=\"submit\" name=\"submit-form-".$this->formId."\" value=\"".$this->getLang("send")."\" />";
 		$ret .= "</p></form>";
 
 		return $ret;

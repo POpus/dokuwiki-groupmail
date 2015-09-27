@@ -22,7 +22,7 @@ $lang["name"] = 'Dein Name';
 $lang["email"] = 'Deine E-Mail';
 $lang["subject"] = 'Betreff';
 $lang["content"] = 'Nachricht';
-$lang["contact"] = 'Senden';
+$lang["send"] = 'Senden';
 
 // error messages
 $lang["error"]["unknown"] = 'E-Mail nicht gesendet. Bitte Administrator kontaktieren.';

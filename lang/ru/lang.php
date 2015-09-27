@@ -21,7 +21,7 @@ $lang["name"] = 'Ваше имя';
 $lang["email"] = 'Ваш email';
 $lang["subject"] = 'Тема';
 $lang["content"] = 'Сообщение';
-$lang["contact"] = 'Отправить';
+$lang["send"] = 'Отправить';
 
 // error messages
 $lang["error"]["unknown"] = 'Mail not sent. Please contact the administrator.';

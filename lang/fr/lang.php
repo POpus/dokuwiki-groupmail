@@ -22,7 +22,7 @@ $lang["name"] = 'Votre nom';
 $lang["email"] = 'Votre adresse électronique';
 $lang["subject"] = 'Sujet';
 $lang["content"] = 'Message';
-$lang["contact"] = 'Envoyer';
+$lang["send"] = 'Envoyer';
 
 // error messages
 

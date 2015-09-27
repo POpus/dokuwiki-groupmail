@@ -21,7 +21,7 @@ $lang["name"] = 'Twoje imię';
 $lang["email"] = 'Twój email';
 $lang["subject"] = 'Temat';
 $lang["content"] = 'Wiadomość';
-$lang["contact"] = 'Wyślij';
+$lang["send"] = 'Wyślij';
 
 // error messages
 $lang["error"]["unknown"] = 'E-mail nie został wysłany. Skontaktuj się z administratorem.';
