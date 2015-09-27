@@ -27,7 +27,7 @@ $lang["date"] = 'Date';
 $lang["time"] = 'Time';
 $lang["from"] = 'From';
 $lang["sent by"] = 'sent by';
-$lang["via"] = 'via DokuWiki at '.wl($ID,'',true)."\n";
+$lang["via"] = 'via DokuWiki at ';
 $lang["viewonline"] = 'view the message online at ';
 $lang["missingpermissions"] = 'this message could not be archived due to missing permissions.';
 
