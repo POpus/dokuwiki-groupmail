@@ -1,0 +1,11 @@
+base   groupmail
+author Roland Wunderling
+email  bzfwunde@gmail.com
+date   2015-09-27
+name   Group mailing system
+desc   Allows to include mailing form to wiki page from which to send
+       email to a preconfigures
+        - list of email addresses
+        - list of dokuwiki users
+        - list of dokuwiki groups
+url    https://github.com/bzfwunde/dokuwiki-groupmail
