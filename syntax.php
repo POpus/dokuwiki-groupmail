@@ -172,20 +172,15 @@ class syntax_plugin_groupmail extends DokuWiki_Syntax_Plugin {
                 $lastline = '';
                 if ( isset($sendlog)  &&  $sendlog != '' ) {
                      $targetpage = htmlspecialchars(trim($sendlog));
-                     if ( auth_quickaclcheck($targetpage) >= AUTH_EDIT ) {
-                        $oldrecord = rawWiki($targetpage);
-                        $newrecord = '====== '.$subject.' ======'."\n\n";
-                        $newrecord .= '  * '.$this->getLang("date").': '.date('Y-m-d')."\n";
-                        $newrecord .= '  * '.$this->getLang("time").': '.date('H:i:s')."\n";
-                        $newrecord .= '  * '.$this->getLang("from").': '.$name.' <'.$email.'>'."\n";
-                        $newrecord .= "\n";
-                        $newrecord .= $comment."\n\n";
-                        saveWikiText($targetpage, $newrecord.$oldrecord, "New entry", true);
-                        $lastline .= $this->getLang("viewonline").wl($ID,'', true).'?id='.$targetpage."\r\n\n\n";
-                     }
-                     else {
-                        $lastline .= $this->getLang("missingpermissions");
-                     }
+                     $oldrecord = rawWiki($targetpage);
+                     $newrecord = '====== '.$subject.' ======'."\n\n";
+                     $newrecord .= '  * '.$this->getLang("date").': '.date('Y-m-d')."\n";
+                     $newrecord .= '  * '.$this->getLang("time").': '.date('H:i:s')."\n";
+                     $newrecord .= '  * '.$this->getLang("from").': '.$name.' <'.$email.'>'."\n";
+                     $newrecord .= "\n";
+                     $newrecord .= $comment."\n\n";
+                     saveWikiText($targetpage, $newrecord.$oldrecord, "New entry", true);
+                     $lastline .= $this->getLang("viewonline").wl($ID,'', true).'?id='.$targetpage."\r\n\n\n";
                 }
 
 		$comment .= "\n\n";
@@ -193,7 +188,7 @@ class syntax_plugin_groupmail extends DokuWiki_Syntax_Plugin {
                 $comment .= $this->getLang("sent by").$name.' <'.$email.'>'."\n";
                 $comment .= $this->getLang("via").wl($ID,'',true)."\n";
                 $comment .= $lastline;
-
+                
 		if (isset($_REQUEST['toemail'])){
 			//multiple targets/profils possible for the email
 			$usersList = explode(',',$_POST['toemail']); 

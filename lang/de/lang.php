@@ -29,7 +29,6 @@ $lang["from"] = 'Absender';
 $lang["sent by"] = 'Gesendet von';
 $lang["via"] = 'mit DokuWiki von ';
 $lang["viewonline"] = 'Diese email online ansehen: ';
-$lang["missingpermissions"] = 'Diese email konnte wegen fehlender Zugriffsrechte nicht archiviert werden.';
 
 // error messages
 $lang["error"]["unknown"] = 'E-Mail nicht gesendet. Bitte Administrator kontaktieren.';
