@@ -84,7 +84,7 @@ class syntax_plugin_groupmail extends DokuWiki_Syntax_Plugin {
 	/**
 	 * Handle the match.
 	 */
-	public function handle($match, $state, $pos, &$handler){
+	public function handle($match, $state, $pos, Doku_Handler $handler){
 		if (isset($_REQUEST['comment']))
 		    return false;
 
@@ -134,7 +134,7 @@ class syntax_plugin_groupmail extends DokuWiki_Syntax_Plugin {
 	/**
 	 * Create output.
 	 */
-	public function render($mode, &$renderer, $data) {
+	public function render($mode, Doku_Renderer $renderer, $data) {
 		if($mode == 'xhtml'){
 			// Define unique form id
 			$this->formId = syntax_plugin_groupmail::$lastFormId++;
