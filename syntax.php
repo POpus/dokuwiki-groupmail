@@ -147,6 +147,19 @@ class syntax_plugin_groupmail extends DokuWiki_Syntax_Plugin {
 		return false;
 	}
 
+	private function send_mail ($to, $subject, $content, $from, $cc, $bcc) {
+        // send a mail
+        $mail = new Mailer();
+        $mail->to($to);
+        $mail->cc($cc);
+        $mail->bcc($bcc);
+        $mail->from($from);
+        $mail->subject($subject);
+        $mail->setBody($content);
+        $ok = $mail->send();
+		return $ok;
+	}
+
 	/**
 	 * Verify and send email content.´
 	 */
@@ -274,7 +287,7 @@ class syntax_plugin_groupmail extends DokuWiki_Syntax_Plugin {
 			// this should never be the case anyway because the form has
 			// validation to ensure a non-empty comment
 			if (trim($comment, " \t") != ''){
-				if (mail_send($to, $subject, $comment, $email, '', '', 'Reply-to: '.$email)){
+				if ($this->send_mail($to, $subject, $comment, $email, '', '')){
 					$this->statusMessage = $this->getLang("success");
 				} else {
 					$this->_set_error('unknown', $lang["unknown"]);
