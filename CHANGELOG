@@ -1,3 +1,8 @@
+2018-06-26 David Cabernel <dcabernel@gmail.com>
+
+* Plugin no longer works if dokuwiki is running under PHP7 because of ereg/eregi commands removed from it
+  Replaced with preg_match command
+
 2015-09-27 Roland Wunderling <bzfwunde@gmail.com>
 
 * Added support to email to emails, wikiusers, wikigroups
