@@ -44,12 +44,12 @@ class syntax_plugin_groupmail extends DokuWiki_Syntax_Plugin {
 	 */
 	public function getInfo(){
 		return array(
-			'author' => 'Roland Wunderling',
-			'email'  => 'bzfwunde@gmail.com',
-			'date'	 => '2015-09-27',
+			'author' => 'David Cabernel',
+			'email'  => 'dcabernel@gmail.com',
+			'date'	 => '2018-06-26',
 			'name'	 => 'Group email plugin',
 			'desc'	 => 'Group email with archiving.',
-			'url'	 => 'https://github.com/bzfwunde/dokuwiki-groupmail',
+			'url'	 => 'https://github.com/POpus/dokuwiki-groupmail',
 		);
 	}
 
@@ -161,7 +161,7 @@ class syntax_plugin_groupmail extends DokuWiki_Syntax_Plugin {
 	}
 
 	/**
-	 * Verify and send email content.Â´
+	 * Verify and send email content.´
 	 */
 	protected function _send_groupmail($captcha=false, $sendlog){
 		global $conf;
@@ -265,19 +265,19 @@ class syntax_plugin_groupmail extends DokuWiki_Syntax_Plugin {
 
 		// A bunch of tests to make sure it's legitimate mail and not spoofed
 		// This should make it not very easy to do injection
-		if (eregi("\r",$name) || eregi("\n",$name) || eregi("MIME-Version: ",$name) || eregi("Content-Type: ",$name)){
+		if (preg_match("/(\r)/",$name) || preg_match("/(\n)/",$name) || preg_match("/(MIME-Version: )/",$name) || preg_match("/(Content-Type: )/",$name)){
 			$this->_set_error('name', $lang["valid_name"]);
 		}
-		if (eregi("\r",$email) || eregi("\n",$email) || eregi("MIME-Version: ",$email || eregi("Content-Type: ",$email))){
+		if (preg_match("/(\r)/",$email) || preg_match("/(\n)/",$email) || preg_match("/(MIME-Version: )/",$email || preg_match("/(Content-Type: )/",$email))){
 			$this->_set_error('email', $lang["valid_email"]);
 		}
-		if (eregi("\r",$subject) || eregi("\n",$subject) || eregi("MIME-Version: ",$subject) || eregi("Content-Type: ",$subject)){
+		if (preg_match("/(\r)/",$subject) || preg_match("/(\n)/",$subject) || preg_match("/(MIME-Version: )/",$subject) || preg_match("/(Content-Type: )/",$subject)){
 			$this->_set_error('subject', $lang["valid_subject"]);
 		}
-		if (eregi("\r",$to) || eregi("\n",$to) || eregi("MIME-Version: ",$to) || eregi("Content-Type: ",$to)){
+		if (preg_match("/(\r)/",$to) || preg_match("/(\n)/",$to) || preg_match("/(MIME-Version: )/",$to) || preg_match("/(Content-Type: )/",$to)){
 			$this->_set_error('to', $lang["valid_to"]);
 		}
-		if (eregi("MIME-Version: ",$comment) || eregi("Content-Type: ",$comment)){
+		if (preg_match("/(MIME-Version: )/",$comment) || preg_match("/(Content-Type: )/",$comment)){
 			$this->_set_error('content', $lang["valid_content"]);
 		}
 
@@ -315,7 +315,7 @@ class syntax_plugin_groupmail extends DokuWiki_Syntax_Plugin {
 	protected function _check_email_address($email) {
 		// First, we check that there's one @ symbol, 
 		// and that the lengths are right.
-		if (!ereg("^[^@]{1,64}@[^@]{1,255}$", $email)) {
+		if (!preg_match("/(^[^@]{1,64}@[^@]{1,255}$)/", $email)) {
 			// Email invalid because wrong number of characters 
 			// in one section or wrong number of @ symbols.
 			return false;
@@ -324,20 +324,20 @@ class syntax_plugin_groupmail extends DokuWiki_Syntax_Plugin {
 		$email_array = explode("@", $email);
 		$local_array = explode(".", $email_array[0]);
 		for ($i = 0; $i < sizeof($local_array); $i++) {
-			if (!ereg("^(([A-Za-z0-9!#$%&'*+/=?^_`{|}~-][A-Za-z0-9!#$%&'*+/=?^_`{|}~\.-]{0,63})|(\"[^(\\|\")]{0,62}\"))$",
+			if (!preg_match("{^(([A-Za-z0-9!#$%&'*+/=?^_`{|}~-][A-Za-z0-9!#$%&'*+/=?^_`{|}~\.-]{0,63})|(\"[^(\\|\")]{0,62}\"))$}",
 				$local_array[$i])) {
 					return false;
 			}
 		}
 		// Check if domain is IP. If not, 
 		// it should be valid domain name
-		if (!ereg("^\[?[0-9\.]+\]?$", $email_array[1])) {
+		if (!preg_match("/(^\[?[0-9\.]+\]?$)/", $email_array[1])) {
 			$domain_array = explode(".", $email_array[1]);
 			if (sizeof($domain_array) < 2) {
 				return false; // Not enough parts to domain
 			}
 			for ($i = 0; $i < sizeof($domain_array); $i++) {
-				if (!ereg("^(([A-Za-z0-9][A-Za-z0-9-]{0,61}[A-Za-z0-9])|([A-Za-z0-9]+))$",
+				if (!preg_match("/(^(([A-Za-z0-9][A-Za-z0-9-]{0,61}[A-Za-z0-9])|([A-Za-z0-9]+))$)/",
 					$domain_array[$i])) {
 						return false;
 				}
