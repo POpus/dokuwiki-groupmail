@@ -65,6 +65,10 @@ p. or email to dokuwiki group members (via dokuwiki group names
 
 bc. {{groupmail>togroup=dokuwikigroup}}
 
+p. the same mail options apply to cc and/or bcc
+
+bc. {{groupmail>toemail=example@mail.com|ccuser=dokuwikiuser|bccgroup=dokuwikigroup}}
+
 p. Don't allow to override the sender name or email, but use registered user
 
 bc. {{groupmail>autofrom}}
