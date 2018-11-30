@@ -1,7 +1,7 @@
 base   groupmail
 author David Cabernel       
 email  dcabernel@gmail.com
-date   2018-06-26
+date   2018-11-30
 name   Group mailing system
 desc   Allows to include mailing form to wiki page from which to send
        email to a preconfigures

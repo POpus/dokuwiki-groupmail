@@ -46,7 +46,7 @@ class syntax_plugin_groupmail extends DokuWiki_Syntax_Plugin {
 		return array(
 			'author' => 'David Cabernel',
 			'email'  => 'dcabernel@gmail.com',
-			'date'	 => '2018-06-26',
+			'date'	 => '2018-11-30',
 			'name'	 => 'Group email plugin',
 			'desc'	 => 'Group email with archiving.',
 			'url'	 => 'https://github.com/POpus/dokuwiki-groupmail',
@@ -107,9 +107,9 @@ class syntax_plugin_groupmail extends DokuWiki_Syntax_Plugin {
 				}
 			} else if ($splitparam[0]=='touser'){
 				if (isset($data[$splitparam[0]])){
-					$data[$splitparam[0]] .= ",".$splitparam[1]; //it is a "touserl" param but not the first
+					$data[$splitparam[0]] .= ",".$splitparam[1]; //it is a "touser" param but not the first
 				}else{
-					$data[$splitparam[0]] = $splitparam[1]; // it is the first "touserl" param
+					$data[$splitparam[0]] = $splitparam[1]; // it is the first "touser" param
 				}
 			} else if ($splitparam[0]=='togroup'){
 				if (isset($data[$splitparam[0]])){
@@ -117,7 +117,44 @@ class syntax_plugin_groupmail extends DokuWiki_Syntax_Plugin {
 				}else{
 					$data[$splitparam[0]] = $splitparam[1]; // it is the first "togroup" param
 				}
-			} else if ($splitparam[0]=='autofrom'){
+			} else if ($splitparam[0]=='ccemail'){
+				if (isset($data[$splitparam[0]])){
+					$data[$splitparam[0]] .= ",".$splitparam[1]; //it is a "ccemail" param but not the first
+				}else{
+					$data[$splitparam[0]] = $splitparam[1]; // it is the first "ccemail" param
+				}
+	       } else if ($splitparam[0]=='ccuser'){
+				if (isset($data[$splitparam[0]])){
+					$data[$splitparam[0]] .= ",".$splitparam[1]; //it is a "ccuser" param but not the first
+				}else{
+					$data[$splitparam[0]] = $splitparam[1]; // it is the first "ccuser" param
+				}
+	       } else if ($splitparam[0]=='ccgroup'){
+				if (isset($data[$splitparam[0]])){
+					$data[$splitparam[0]] .= ",".$splitparam[1]; //it is a "ccgroup" param but not the first
+				}else{
+					$data[$splitparam[0]] = $splitparam[1]; // it is the first "ccgroup" param
+				}
+			} else if ($splitparam[0]=='bccemail'){
+				if (isset($data[$splitparam[0]])){
+					$data[$splitparam[0]] .= ",".$splitparam[1]; //it is a "bccemail" param but not the first
+				}else{
+					$data[$splitparam[0]] = $splitparam[1]; // it is the first "bccemail" param
+				}
+	       } else if ($splitparam[0]=='bccuser'){
+				if (isset($data[$splitparam[0]])){
+					$data[$splitparam[0]] .= ",".$splitparam[1]; //it is a "bccuser" param but not the first
+				}else{
+					$data[$splitparam[0]] = $splitparam[1]; // it is the first "bccuserl" param
+				}
+	       } else if ($splitparam[0]=='bccgroup'){
+				if (isset($data[$splitparam[0]])){
+					$data[$splitparam[0]] .= ",".$splitparam[1]; //it is a "bccgroup" param but not the first
+				}else{
+					$data[$splitparam[0]] = $splitparam[1]; // it is the first "bccgroup" param
+				}
+
+	      }else if ($splitparam[0]=='autofrom'){
                            // If only 'autofrom' is set but no 'autofrom=...', 
                            // default to 'autofrom=true'
                            if (!isset($data[$splitparam[0]]))
@@ -127,7 +164,7 @@ class syntax_plugin_groupmail extends DokuWiki_Syntax_Plugin {
 			}else{
 				$data[$splitparam[0]] = $splitparam[1]; // All other parameters
 			}
-		}
+	    } 
 		return $data;
 	}
 
@@ -168,7 +205,7 @@ class syntax_plugin_groupmail extends DokuWiki_Syntax_Plugin {
 		global $auth;
 		global $USERINFO;
 		// global $ID;
-
+		
 		$lang = $this->getLang("error");
 
 		require_once(DOKU_INC.'inc/mail.php');
@@ -212,7 +249,7 @@ class syntax_plugin_groupmail extends DokuWiki_Syntax_Plugin {
 					$to = $user;
 				}
 			}
-		} else if (isset($_REQUEST['touser'])){
+    	} else if (isset($_REQUEST['touser'])){
 			//multiple targets/profils possible for the email
 			$usersList = explode(',',$_POST['touser']); 
 			foreach($usersList as $userId){
@@ -243,7 +280,93 @@ class syntax_plugin_groupmail extends DokuWiki_Syntax_Plugin {
 		} else {
 			$to = $this->getConf('default');
 		}
-
+		
+  		
+	  if (isset($_REQUEST['ccemail'])){
+			//multiple targets/profils possible for the email
+			$usersList = explode(',',$_POST['ccemail']); 
+			foreach($usersList as $user){
+				if (!empty($cc)){
+					$cc .= ",".$user;
+					//$note .= "more than one cc";
+				}else{
+					$cc = $user;
+					//$note .= "first cc";
+				}
+			}
+    	} else if (isset($_REQUEST['ccuser'])){
+			//multiple targets/profils possible for the email
+			$usersList = explode(',',$_POST['ccuser']); 
+			foreach($usersList as $userId){
+				$user = $auth->getUserData($userId);
+				if (isset($user)) {
+					if (!empty($cc)){
+						$cc .= ",".$user['mail'];
+					}else{
+						$cc = $user['mail'];
+					}
+				}
+			}
+		} else if (isset($_REQUEST['ccgroup'])){
+                        if (!method_exists($auth,"retrieveUsers")) return false;
+			//multiple targets/profils possible for the email
+			$groupList = explode(',',$_POST['ccgroup']); 
+			$userList = array();
+                        foreach ($groupList as $grp) {
+                            $getuser = $auth->retrieveUsers(0,-1,array('grps'=>'^'.preg_quote($grp,'/').'$'));
+                            foreach ($getuser as $u => $info) {
+				if (!empty($cc)){
+					$cc .= ",".$info['mail'];
+				}else{
+					$cc = $info['mail'];
+				}
+              }
+           }
+		} else {
+			$cc = '';
+		}
+        
+	  if (isset($_REQUEST['bccemail'])){
+			//multiple targets/profils possible for the email
+			$usersList = explode(',',$_POST['bccemail']); 
+			foreach($usersList as $user){
+				if (!empty($bcc)){
+					$bcc .= ",".$user;
+				}else{
+					$bcc = $user;
+				}
+			}
+    	} else if (isset($_REQUEST['bccuser'])){
+			//multiple targets/profils possible for the email
+			$usersList = explode(',',$_POST['bccuser']); 
+			foreach($usersList as $userId){
+				$user = $auth->getUserData($userId);
+				if (isset($user)) {
+					if (!empty($bcc)){
+						$bcc .= ",".$user['mail'];
+					}else{
+						$bcc = $user['mail'];
+					}
+				}
+			}
+		} else if (isset($_REQUEST['bccgroup'])){
+                        if (!method_exists($auth,"retrieveUsers")) return false;
+			//multiple targets/profils possible for the email
+			$groupList = explode(',',$_POST['ccgroup']); 
+			$userList = array();
+                        foreach ($groupList as $grp) {
+                            $getuser = $auth->retrieveUsers(0,-1,array('grps'=>'^'.preg_quote($grp,'/').'$'));
+                            foreach ($getuser as $u => $info) {
+				if (!empty($bcc)){
+					$bcc .= ",".$info['mail'];
+				}else{
+					$bcc = $info['mail'];
+				}
+              }
+           }
+		} else {
+			$bcc = '';
+		}        
 		// name entered?
 		if(strlen($name) < 2)
 			$this->_set_error('name', $lang["name"]);
@@ -277,17 +400,26 @@ class syntax_plugin_groupmail extends DokuWiki_Syntax_Plugin {
 		if (preg_match("/(\r)/",$to) || preg_match("/(\n)/",$to) || preg_match("/(MIME-Version: )/",$to) || preg_match("/(Content-Type: )/",$to)){
 			$this->_set_error('to', $lang["valid_to"]);
 		}
+		if (preg_match("/(\r)/",$cc) || preg_match("/(\n)/",$cc) || preg_match("/(MIME-Version: )/",$cc) || preg_match("/(Content-Type: )/",$cc)){
+			$this->_set_error('cc', $lang["valid_cc"]);
+		}
+		if (preg_match("/(\r)/",$bcc) || preg_match("/(\n)/",$bcc) || preg_match("/(MIME-Version: )/",$bcc) || preg_match("/(Content-Type: )/",$bcc)){
+			$this->_set_error('bcc', $lang["valid_bcc"]);
+		}
 		if (preg_match("/(MIME-Version: )/",$comment) || preg_match("/(Content-Type: )/",$comment)){
 			$this->_set_error('content', $lang["valid_content"]);
 		}
 
+		//testing
+		//$comment = 'To: ' . $to . '  cc: ' . $cc . '  bcc: ' . $bcc . '  Note: ' . $note;
+		
 		// Status has not changed.
 		if($this->status != 0) {
 			// send only if comment is not empty
 			// this should never be the case anyway because the form has
 			// validation to ensure a non-empty comment
 			if (trim($comment, " \t") != ''){
-				if ($this->send_mail($to, $subject, $comment, $email, '', '')){
+				if ($this->send_mail($to, $subject, $comment, $email, $cc, $bcc)){
 					$this->statusMessage = $this->getLang("success");
 				} else {
 					$this->_set_error('unknown', $lang["unknown"]);
@@ -408,6 +540,22 @@ class syntax_plugin_groupmail extends DokuWiki_Syntax_Plugin {
 			$ret .= "<input type=\"hidden\" name=\"togroup\" value=\"".$data['togroup']."\" />";
 		else if ( isset($data['toemail']) )
 			$ret .= "<input type=\"hidden\" name=\"toemail\" value=\"".$data['toemail']."\" />";
+		
+		if ( isset($data['ccuser']) )
+			$ret .= "<input type=\"hidden\" name=\"ccuser\" value=\"".$data['ccuser']."\" />";
+		else if ( isset($data['ccgroup']) )
+			$ret .= "<input type=\"hidden\" name=\"ccgroup\" value=\"".$data['ccgroup']."\" />";
+		else if ( isset($data['ccemail']) )
+			$ret .= "<input type=\"hidden\" name=\"ccemail\" value=\"".$data['ccemail']."\" />";
+
+		if ( isset($data['bccuser']) )
+			$ret .= "<input type=\"hidden\" name=\"bccuser\" value=\"".$data['bccuser']."\" />";
+		else if ( isset($data['bccgroup']) )
+			$ret .= "<input type=\"hidden\" name=\"bccgroup\" value=\"".$data['bccgroup']."\" />";
+		else if ( isset($data['bccemail']) )
+			$ret .= "<input type=\"hidden\" name=\"bccemail\" value=\"".$data['bccemail']."\" />";
+
+		
 		$ret .= "<input type=\"hidden\" name=\"do\" value=\"show\" />";
 		$ret .= "<input type=\"submit\" name=\"submit-form-".$this->formId."\" value=\"".$this->getLang("send")."\" />";
 		$ret .= "</p></form>";

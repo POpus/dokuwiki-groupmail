@@ -83,9 +83,15 @@ h3. Available parameters
 
 | subject=... | If the subject is specified in the parameters then it is not a field on the email form. |
 | autofrom | If specified, the sender fields are not shown in the email form. |
-| toemail=... | a (list of) email address(es) to sent email to. |
+| toemail=... | a (list of) email address(es) to send email to. |
 | touser=... | a (list of) dokuwiki user account names to send email to. |
 | togroup=... | a (list of) dokuwiki group names to send email to. |
+| ccemail=... | a (list of) email address(es) to carbon copy email to. |
+| ccuser=... | a (list of) dokuwiki user account names to carbon copy email to. |
+| ccgroup=... | a (list of) dokuwiki group names to carbon copy email to. |
+| bccemail=... | a (list of) email address(es) to blind carbon copy email to. |
+| bccuser=... | a (list of) dokuwiki user account names to blind carbon copy email to. |
+| bccgroup=... | a (list of) dokuwiki group names to blind carbon copy email to. |
 | content=... | Text that should be prefilled in the email body. |
 | sendlog=... | Define a dokuwiki file where all emails are prepended to. |
 | captcha | If set to true, the captcha will be enabled. Set it on false to disable it. You must activate the captcha by default in order to change its status with this parameter. |

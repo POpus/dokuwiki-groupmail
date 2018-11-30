@@ -1,3 +1,8 @@
+2018-11-30 David Cabernel <dcabernel@gmail.com>
+
+* Added support for ccemail, ccuser, ccgroup
+* Added support for bccemail, bccuser, bccgroup
+
 2018-06-26 David Cabernel <dcabernel@gmail.com>
 
 * Plugin no longer works if dokuwiki is running under PHP7 because of ereg/eregi commands removed from it
