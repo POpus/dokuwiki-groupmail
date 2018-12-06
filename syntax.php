@@ -352,7 +352,7 @@ class syntax_plugin_groupmail extends DokuWiki_Syntax_Plugin {
 		} else if (isset($_REQUEST['bccgroup'])){
                         if (!method_exists($auth,"retrieveUsers")) return false;
 			//multiple targets/profils possible for the email
-			$groupList = explode(',',$_POST['ccgroup']); 
+			$groupList = explode(',',$_POST['bccgroup']); 
 			$userList = array();
                         foreach ($groupList as $grp) {
                             $getuser = $auth->retrieveUsers(0,-1,array('grps'=>'^'.preg_quote($grp,'/').'$'));
