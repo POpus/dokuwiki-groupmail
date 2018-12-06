@@ -1,3 +1,7 @@
+2018-12-06 David Cabernel <dcabernel@gmail.com>
+
+* bug with bccgroup fixed
+
 2018-11-30 David Cabernel <dcabernel@gmail.com>
 
 * Added support for ccemail, ccuser, ccgroup
