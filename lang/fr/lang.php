@@ -24,13 +24,11 @@ $lang["subject"] = 'Sujet';
 $lang["content"] = 'Message';
 $lang["send"] = 'Envoyer';
 
-// FIXME - provide translation:
-$lang["date"] = 'Date';
-$lang["time"] = 'Time';
-$lang["from"] = 'From';
-$lang["sent by"] = 'sent by';
-$lang["via"] = 'via DokuWiki at ';
-$lang["viewonline"] = 'view the message online at ';
+$lang["from"] = 'par';
+$lang["datetime"] = ' à %Y-%m-%d %H:%M'; 
+$lang["sent by"] = 'Envoyé par';
+$lang["via"] = 'via DokuWiki';
+$lang["viewonline"] = 'Voir le message en ligne ';
 
 // error messages
 

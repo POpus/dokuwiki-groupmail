@@ -14,6 +14,15 @@ p.groupmail_error {
 	background-color: #F6B9B9;
 	color: #c32727;
 }
+form[id^="groupmail-"] fieldset {
+  text-align:left;
+}
+form[id^="groupmail-"] fieldset input {
+  width:100%;
+}
+form[id^="groupmail-"] label {
+  display:block;
+}
 input.error_field, textarea.error_field {
-	border: 1px solid #e18484;
+  border: 1px solid #e18484;
 }

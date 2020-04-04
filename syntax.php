@@ -4,6 +4,7 @@
  * 
  * Copyright (C) 2008 Bob Baddeley (bobbaddeley.com)
  * Copyright (C) 2010-2012 Marvin Thomas Rabe (marvinrabe.de)
+ * Copyright (C) 2020 Luffah
  * 
  * This program is free software; you can redistribute it and/or modify it under the terms
  * of the GNU General Public License as published by the Free Software Foundation; either
@@ -21,6 +22,7 @@
  * @license GNU General Public License 3 <http://www.gnu.org/licenses/>
  * @author Bob Baddeley <bob@bobbaddeley.com>
  * @author Marvin Thomas Rabe <mrabe@marvinrabe.de>
+ * @author Luffah <contact@luffah.xyz>
  */
 
 if(!defined('DOKU_INC')) define('DOKU_INC',realpath(dirname(__FILE__).'/../../').'/');
@@ -31,560 +33,455 @@ require_once(dirname(__file__).'/recaptchalib.php');
 
 class syntax_plugin_groupmail extends DokuWiki_Syntax_Plugin {
 
-	public static $captcha = false;
-	public static $lastFormId = 1;
+  public static $captcha = false;
+  public static $lastFormIdx = 1;
 
-	private $formId = 0;
-	private $status = 1;
-	private $statusMessage;
-	private $errorFlags = array();
+  private static $recipientFields = array(
+    'toemail', 'touser', 'togroup', 
+    'ccemail', 'ccuser', 'ccgroup', 
+    'bccemail', 'bccuser', 'bccgroup'
+  );
+  private $formId = '';
+  private $status = 1;
+  private $statusMessage;
+  private $errorFlags = array();
+  private $recipient_groups = array();
+  private $sender_groups = array();
 
-	/**
-	 * General information about the plugin.
-	 */
-	public function getInfo(){
-		return array(
-			'author' => 'David Cabernel',
-			'email'  => 'dcabernel@gmail.com',
-			'date'	 => '2018-11-30',
-			'name'	 => 'Group email plugin',
-			'desc'	 => 'Group email with archiving.',
-			'url'	 => 'https://github.com/POpus/dokuwiki-groupmail',
-		);
-	}
+  /**
+   * Syntax type
+   */
+  public function getType(){
+    return 'container';
+  }
 
-	/**
-	 * What kind of syntax are we?
-	 */
-	public function getType(){
-		return 'container';
-	}
+  public function getPType(){
+    return 'block';
+  }
 
-	/**
-	 * What about paragraphs?
-	 */
-	public function getPType(){
-		return 'block';
-	}
+  /**
+   * Where to sort in?
+   */
+  public function getSort(){
+    return 300;
+  }
 
-	/**
- 	 * Where to sort in?
- 	 */
-	public function getSort(){
-		return 300;
-	}
+  /**
+   * Connect pattern to lexer.
+   */
+  public function connectTo($mode) {
+    $this->Lexer->addSpecialPattern('\{\{groupmail>[^}]*\}\}',$mode,'plugin_groupmail');
+  }
 
-	/**
- 	 * Connect pattern to lexer.
- 	 */
-	public function connectTo($mode) {
-		$this->Lexer->addSpecialPattern('\{\{groupmail>[^}]*\}\}',$mode,'plugin_groupmail');
-	}
+  /**
+   * Handle the match.
+   */
+  public function handle($match, $state, $pos, Doku_Handler $handler){
+    if (isset($_REQUEST['comment']))
+      return false;
 
-	/**
-	 * Handle the match.
-	 */
-	public function handle($match, $state, $pos, Doku_Handler $handler){
-		if (isset($_REQUEST['comment']))
-		    return false;
+    $match = substr($match,12,-2); //strip markup from start and end
+    $data = array();
 
-		$match = substr($match,12,-2); //strip markup from start and end
+    //handle params
+    foreach(explode('|',$match) as $param){
+      $splitparam = explode('=',$param,2);
+      $key = $splitparam[0];
+      $val = count($splitparam)==2 ? $splitparam[1]:Null;
+      //multiple targets/profils possible for the email
+      //add multiple to field in the dokuwiki page code
+      // example : {{groupmail>to=profile1,profile2|subject=Feedback from Site}}
+      if (in_array($key, syntax_plugin_groupmail::$recipientFields)){
+        if (is_null($val)) continue;
+        if (isset($data[$key])){
+          $data[$key] .= ",".$val; //it is a "toemail" param but not the first
+        }else{
+          $data[$key] = $val; // it is the first "toemail" param
+        }
 
-		$data = array();
+      } else if ($key=='autofrom'){  // autofrom doesn't require value
+        $data[$key] = is_null($val) ? 'true' : $val;
+      } else {
+        $data[$splitparam[0]] = $splitparam[1]; // All other parameters
+      }
+    }
+    return $data;
+  }
 
-		//handle params
-		$params = explode('|',$match);
-		foreach($params as $param){
-			$splitparam = explode('=',$param);
-			//multiple targets/profils possible for the email
-			//add multiple to field in the dokuwiki page code
-			// example : {{groupmail>to*=profile1|subject=Feedback from Site}}
-			if ($splitparam[0]=='toemail'){
-				if (isset($data[$splitparam[0]])){
-					$data[$splitparam[0]] .= ",".$splitparam[1]; //it is a "toemail" param but not the first
-				}else{
-					$data[$splitparam[0]] = $splitparam[1]; // it is the first "toemail" param
-				}
-			} else if ($splitparam[0]=='touser'){
-				if (isset($data[$splitparam[0]])){
-					$data[$splitparam[0]] .= ",".$splitparam[1]; //it is a "touser" param but not the first
-				}else{
-					$data[$splitparam[0]] = $splitparam[1]; // it is the first "touser" param
-				}
-			} else if ($splitparam[0]=='togroup'){
-				if (isset($data[$splitparam[0]])){
-					$data[$splitparam[0]] .= ",".$splitparam[1]; //it is a "togroup" param but not the first
-				}else{
-					$data[$splitparam[0]] = $splitparam[1]; // it is the first "togroup" param
-				}
-			} else if ($splitparam[0]=='ccemail'){
-				if (isset($data[$splitparam[0]])){
-					$data[$splitparam[0]] .= ",".$splitparam[1]; //it is a "ccemail" param but not the first
-				}else{
-					$data[$splitparam[0]] = $splitparam[1]; // it is the first "ccemail" param
-				}
-	       } else if ($splitparam[0]=='ccuser'){
-				if (isset($data[$splitparam[0]])){
-					$data[$splitparam[0]] .= ",".$splitparam[1]; //it is a "ccuser" param but not the first
-				}else{
-					$data[$splitparam[0]] = $splitparam[1]; // it is the first "ccuser" param
-				}
-	       } else if ($splitparam[0]=='ccgroup'){
-				if (isset($data[$splitparam[0]])){
-					$data[$splitparam[0]] .= ",".$splitparam[1]; //it is a "ccgroup" param but not the first
-				}else{
-					$data[$splitparam[0]] = $splitparam[1]; // it is the first "ccgroup" param
-				}
-			} else if ($splitparam[0]=='bccemail'){
-				if (isset($data[$splitparam[0]])){
-					$data[$splitparam[0]] .= ",".$splitparam[1]; //it is a "bccemail" param but not the first
-				}else{
-					$data[$splitparam[0]] = $splitparam[1]; // it is the first "bccemail" param
-				}
-	       } else if ($splitparam[0]=='bccuser'){
-				if (isset($data[$splitparam[0]])){
-					$data[$splitparam[0]] .= ",".$splitparam[1]; //it is a "bccuser" param but not the first
-				}else{
-					$data[$splitparam[0]] = $splitparam[1]; // it is the first "bccuserl" param
-				}
-	       } else if ($splitparam[0]=='bccgroup'){
-				if (isset($data[$splitparam[0]])){
-					$data[$splitparam[0]] .= ",".$splitparam[1]; //it is a "bccgroup" param but not the first
-				}else{
-					$data[$splitparam[0]] = $splitparam[1]; // it is the first "bccgroup" param
-				}
+  private function check_recipient_access($data, $field){
+    if (isset($data[$field])){
+      $typ=substr($field, -4);
+      $vals = explode(',' , $data[$field]);
 
-	      }else if ($splitparam[0]=='autofrom'){
-                           // If only 'autofrom' is set but no 'autofrom=...', 
-                           // default to 'autofrom=true'
-                           if (!isset($data[$splitparam[0]]))
-                              $data[$splitparam[0]] = 'true';
-                           else
-		              $data[$splitparam[0]] = $splitparam[1]; // it is not a "to" param
-			}else{
-				$data[$splitparam[0]] = $splitparam[1]; // All other parameters
-			}
-	    } 
-		return $data;
-	}
+      if ($typ == 'roup') {  # group list type
+        foreach ($vals as $group) {
+          if (!in_array($group, $this->recipient_groups)){
+            $this->_set_error("acl_togroup", array($group, $field), 'acl');
+          }
+        }
+      } elseif ($typ == 'user') {  # user list type
+        foreach ($vals as $userId) {
+          $info = $auth->getUserData($userId);
+          if (isset($info)) {
+            if (count(array_intersect($info['grps'], $this->recipient_groups))==0) {
+              $this->_set_error("acl_touser", array($userId, $field), 'acl');
+            }
+          } else {
+            $this->_set_error("acl_touser", array($userId, $field), 'acl');
+          }
+        }
+      }
+    }
+  }
 
-	/**
-	 * Create output.
-	 */
-	public function render($mode, Doku_Renderer $renderer, $data) {
-		if($mode == 'xhtml'){
-			// Define unique form id
-			$this->formId = syntax_plugin_groupmail::$lastFormId++;
+  private function getexplodedvals($data, $fields){
+    $res = array();
+    foreach ($fields as $field){
+      if (isset($data[$field]))
+        $res[$field] = explode(',' , $data[$field]);
+    }
+    return $res;
+  }
 
-			// Disable cache
-			$renderer->info['cache'] = false;
-			$renderer->doc .= $this->_groupmail($data);
-			return true;
-		}
-		return false;
-	}
+  /**
+   * Create output.
+   */
+  public function render($mode, Doku_Renderer $renderer, $data) {
+    global $USERINFO;
 
-	private function send_mail ($to, $subject, $content, $from, $cc, $bcc) {
-        // send a mail
-        $mail = new Mailer();
-        $mail->to($to);
-        $mail->cc($cc);
-        $mail->bcc($bcc);
-        $mail->from($from);
-        $mail->subject($subject);
-        $mail->setBody($content);
-        $ok = $mail->send();
-		return $ok;
-	}
+    if($mode == 'xhtml'){
+      // Disable cache
+      $renderer->info['cache'] = false;
 
-	/**
-	 * Verify and send email content.´
-	 */
-	protected function _send_groupmail($captcha=false, $sendlog){
-		global $conf;
-		global $auth;
-		global $USERINFO;
-		// global $ID;
-		
-		$lang = $this->getLang("error");
+      /**
+       * Basic access rights based on group
+       */
+      $this->sender_groups = explode(',', $this->getConf('sender_groups'));
+      $this->recipient_groups = explode(',', $this->getConf('recipient_groups'));
 
-		require_once(DOKU_INC.'inc/mail.php');
-                $name  = $_POST['name'];
-                $email = $_POST['email'];
-		$subject = $_POST['subject'];
-		$comment = $_POST['content'];
+      if (count(array_intersect($USERINFO['grps'], $this->sender_groups))==0) {
+        // user have no right to see this
+        return true;
+      }
 
-		// comment entered?
-		if(strlen($_POST['content']) < 10)
-			$this->_set_error('content', $lang["content"]);
+      if ( !$this->getConf('allow_email') && (
+        isset($data['toemail']) || isset($data['bccemail']) || isset($data['ccemail'])
+      )) {
+        $this->_set_error("external_email_forbidden", Null, 'acl');
+      }
+      $vals = $this->getExplodedVals($data, syntax_plugin_groupmail::$recipientFields);
+      if ( $this->getConf('confidentiality') == 'one' ) { 
+        $nb_recipients=0;
+        if (preg_grep('/(cc|group)/', array_keys($vals)))
+          $nb_recipients+=2;
 
-                // record email in log
-                $lastline = '';
-                if ( isset($sendlog)  &&  $sendlog != '' ) {
-                     $targetpage = htmlspecialchars(trim($sendlog));
-                     $oldrecord = rawWiki($targetpage);
-                     $newrecord = '====== '.$subject.' ======'."\n\n";
-                     $newrecord .= '  * '.$this->getLang("date").': '.date('Y-m-d')."\n";
-                     $newrecord .= '  * '.$this->getLang("time").': '.date('H:i:s')."\n";
-                     $newrecord .= '  * '.$this->getLang("from").': '.$name.' <'.$email.'>'."\n";
-                     $newrecord .= "\n";
-                     $newrecord .= $comment."\n\n";
-                     saveWikiText($targetpage, $newrecord.$oldrecord, "New entry", true);
-                     $lastline .= $this->getLang("viewonline").wl($ID,'', true).'?id='.$targetpage."\r\n\n\n";
-                }
+        foreach(array('touser', 'toemail', 'bccuser', 'bccemail') as $field)
+          if (isset($vals[$field])) $nb_recipients+=count($vals[$field]);
 
-		$comment .= "\n\n";
-                $comment .= '---------------------------------------------------------------'."\n";
-                $comment .= $this->getLang("sent by").$name.' <'.$email.'>'."\n";
-                $comment .= $this->getLang("via").wl($ID,'',true)."\n";
-                $comment .= $lastline;
-                
-		if (isset($_REQUEST['toemail'])){
-			//multiple targets/profils possible for the email
-			$usersList = explode(',',$_POST['toemail']); 
-			foreach($usersList as $user){
-				if (!empty($to)){
-					$to .= ",".$user;
-				}else{
-					$to = $user;
-				}
-			}
-    	} else if (isset($_REQUEST['touser'])){
-			//multiple targets/profils possible for the email
-			$usersList = explode(',',$_POST['touser']); 
-			foreach($usersList as $userId){
-				$user = $auth->getUserData($userId);
-				if (isset($user)) {
-					if (!empty($to)){
-						$to .= ",".$user['mail'];
-					}else{
-						$to = $user['mail'];
-					}
-				}
-			}
-		} else if (isset($_REQUEST['togroup'])){
-                        if (!method_exists($auth,"retrieveUsers")) return false;
-			//multiple targets/profils possible for the email
-			$groupList = explode(',',$_POST['togroup']); 
-			$userList = array();
-                        foreach ($groupList as $grp) {
-                            $getuser = $auth->retrieveUsers(0,-1,array('grps'=>'^'.preg_quote($grp,'/').'$'));
-                            foreach ($getuser as $u => $info) {
-				if (!empty($to)){
-					$to .= ",".$info['mail'];
-				}else{
-					$to = $info['mail'];
-				}
-                            }
-                        }
-		} else {
-			$to = $this->getConf('default');
-		}
-		
-  		
-	  if (isset($_REQUEST['ccemail'])){
-			//multiple targets/profils possible for the email
-			$usersList = explode(',',$_POST['ccemail']); 
-			foreach($usersList as $user){
-				if (!empty($cc)){
-					$cc .= ",".$user;
-					//$note .= "more than one cc";
-				}else{
-					$cc = $user;
-					//$note .= "first cc";
-				}
-			}
-    	} else if (isset($_REQUEST['ccuser'])){
-			//multiple targets/profils possible for the email
-			$usersList = explode(',',$_POST['ccuser']); 
-			foreach($usersList as $userId){
-				$user = $auth->getUserData($userId);
-				if (isset($user)) {
-					if (!empty($cc)){
-						$cc .= ",".$user['mail'];
-					}else{
-						$cc = $user['mail'];
-					}
-				}
-			}
-		} else if (isset($_REQUEST['ccgroup'])){
-                        if (!method_exists($auth,"retrieveUsers")) return false;
-			//multiple targets/profils possible for the email
-			$groupList = explode(',',$_POST['ccgroup']); 
-			$userList = array();
-                        foreach ($groupList as $grp) {
-                            $getuser = $auth->retrieveUsers(0,-1,array('grps'=>'^'.preg_quote($grp,'/').'$'));
-                            foreach ($getuser as $u => $info) {
-				if (!empty($cc)){
-					$cc .= ",".$info['mail'];
-				}else{
-					$cc = $info['mail'];
-				}
-              }
-           }
-		} else {
-			$cc = '';
-		}
-        
-	  if (isset($_REQUEST['bccemail'])){
-			//multiple targets/profils possible for the email
-			$usersList = explode(',',$_POST['bccemail']); 
-			foreach($usersList as $user){
-				if (!empty($bcc)){
-					$bcc .= ",".$user;
-				}else{
-					$bcc = $user;
-				}
-			}
-    	} else if (isset($_REQUEST['bccuser'])){
-			//multiple targets/profils possible for the email
-			$usersList = explode(',',$_POST['bccuser']); 
-			foreach($usersList as $userId){
-				$user = $auth->getUserData($userId);
-				if (isset($user)) {
-					if (!empty($bcc)){
-						$bcc .= ",".$user['mail'];
-					}else{
-						$bcc = $user['mail'];
-					}
-				}
-			}
-		} else if (isset($_REQUEST['bccgroup'])){
-                        if (!method_exists($auth,"retrieveUsers")) return false;
-			//multiple targets/profils possible for the email
-			$groupList = explode(',',$_POST['bccgroup']); 
-			$userList = array();
-                        foreach ($groupList as $grp) {
-                            $getuser = $auth->retrieveUsers(0,-1,array('grps'=>'^'.preg_quote($grp,'/').'$'));
-                            foreach ($getuser as $u => $info) {
-				if (!empty($bcc)){
-					$bcc .= ",".$info['mail'];
-				}else{
-					$bcc = $info['mail'];
-				}
-              }
-           }
-		} else {
-			$bcc = '';
-		}        
-		// name entered?
-		if(strlen($name) < 2)
-			$this->_set_error('name', $lang["name"]);
+        if ($nb_recipients > 1)
+          $this->_set_error("acl_one", Null, 'acl');
+      } elseif ( $this->getConf('confidentiality') == 'bcc' ) { 
+        $nb_recipients=0;
+        if (preg_grep('/^(cc|togroup)/', array_keys($vals)))
+          $nb_recipients+=2;
 
-		// email correctly entered?
-		if(!$this->_check_email_address($email))
-			$this->_set_error('email', $lang["email"]);
+        if (preg_grep('/^bcc/', array_keys($vals)))
+          $nb_recipients+=1;
 
-		// checks recaptcha answer
-		if($conf['plugin']['groupmail']['captcha'] == 1 && $captcha == true) {
-			$resp = recaptcha_check_answer ($conf['plugin']['groupmail']['recaptchasecret'],
-						$_SERVER["REMOTE_ADDR"],
-						$_POST["recaptcha_challenge_field"],
-						$_POST["recaptcha_response_field"]);
-			if (!$resp->is_valid){
-				$this->_set_error('captcha', $lang["captcha"]);
-			}
-		}
+        foreach(array('touser', 'toemail') as $field)
+          if (isset($vals[$field])) $nb_recipients+=count($vals[$field]);
 
-		// A bunch of tests to make sure it's legitimate mail and not spoofed
-		// This should make it not very easy to do injection
-		if (preg_match("/(\r)/",$name) || preg_match("/(\n)/",$name) || preg_match("/(MIME-Version: )/",$name) || preg_match("/(Content-Type: )/",$name)){
-			$this->_set_error('name', $lang["valid_name"]);
-		}
-		if (preg_match("/(\r)/",$email) || preg_match("/(\n)/",$email) || preg_match("/(MIME-Version: )/",$email || preg_match("/(Content-Type: )/",$email))){
-			$this->_set_error('email', $lang["valid_email"]);
-		}
-		if (preg_match("/(\r)/",$subject) || preg_match("/(\n)/",$subject) || preg_match("/(MIME-Version: )/",$subject) || preg_match("/(Content-Type: )/",$subject)){
-			$this->_set_error('subject', $lang["valid_subject"]);
-		}
-		if (preg_match("/(\r)/",$to) || preg_match("/(\n)/",$to) || preg_match("/(MIME-Version: )/",$to) || preg_match("/(Content-Type: )/",$to)){
-			$this->_set_error('to', $lang["valid_to"]);
-		}
-		if (preg_match("/(\r)/",$cc) || preg_match("/(\n)/",$cc) || preg_match("/(MIME-Version: )/",$cc) || preg_match("/(Content-Type: )/",$cc)){
-			$this->_set_error('cc', $lang["valid_cc"]);
-		}
-		if (preg_match("/(\r)/",$bcc) || preg_match("/(\n)/",$bcc) || preg_match("/(MIME-Version: )/",$bcc) || preg_match("/(Content-Type: )/",$bcc)){
-			$this->_set_error('bcc', $lang["valid_bcc"]);
-		}
-		if (preg_match("/(MIME-Version: )/",$comment) || preg_match("/(Content-Type: )/",$comment)){
-			$this->_set_error('content', $lang["valid_content"]);
-		}
+        if ($nb_recipients > 1)
+          $this->_set_error("acl_bcc", Null, 'acl');
+      }
+      $this->check_recipient_access($vals, 'togroup');
+      $this->check_recipient_access($vals, 'touser');
+      $this->check_recipient_access($vals, 'ccgroup');
+      $this->check_recipient_access($vals, 'ccuser');
+      $this->check_recipient_access($vals, 'bccgroup');
+      $this->check_recipient_access($vals, 'bccuser');
+      if ($this->errorFlags['acl']){
+        $renderer->doc .= $this->_html_status_box();
+        return true;
+      }
 
-		//testing
-		//$comment = 'To: ' . $to . '  cc: ' . $cc . '  bcc: ' . $bcc . '  Note: ' . $note;
-		
-		// Status has not changed.
-		if($this->status != 0) {
-			// send only if comment is not empty
-			// this should never be the case anyway because the form has
-			// validation to ensure a non-empty comment
-			if (trim($comment, " \t") != ''){
-				if ($this->send_mail($to, $subject, $comment, $email, $cc, $bcc)){
-					$this->statusMessage = $this->getLang("success");
-				} else {
-					$this->_set_error('unknown', $lang["unknown"]);
-				}
-				//we're using the included mail_send command because it's
-				//already there and it's easy to use and it works
-			}
-		}
+      // Define unique form id
+      $this->formId = 'groupmail-form-'.(syntax_plugin_groupmail::$lastFormIdx++);
 
-		return true;
-	}
 
-	/**
-	 * Manage error messages.
-	 */
-	protected function _set_error($type, $message) {
-		$this->status = 0;
-		$this->statusMessage .= empty($this->statusMessage)?$message:'<br>'.$message;
-		$this->errorFlags[$type] = true;
-	}
+      $renderer->doc .= $this->mailgroup_form($data, $vals);
+      return true;
+    }
+    return false;
+  }
 
-	/**
-	 * Validate email address. From: http://www.ilovejackdaniels.com/php/email-address-validation
-	 */
-	protected function _check_email_address($email) {
-		// First, we check that there's one @ symbol, 
-		// and that the lengths are right.
-		if (!preg_match("/(^[^@]{1,64}@[^@]{1,255}$)/", $email)) {
-			// Email invalid because wrong number of characters 
-			// in one section or wrong number of @ symbols.
-			return false;
-		}
-		// Split it into sections to make life easier
-		$email_array = explode("@", $email);
-		$local_array = explode(".", $email_array[0]);
-		for ($i = 0; $i < sizeof($local_array); $i++) {
-			if (!preg_match("{^(([A-Za-z0-9!#$%&'*+/=?^_`{|}~-][A-Za-z0-9!#$%&'*+/=?^_`{|}~\.-]{0,63})|(\"[^(\\|\")]{0,62}\"))$}",
-				$local_array[$i])) {
-					return false;
-			}
-		}
-		// Check if domain is IP. If not, 
-		// it should be valid domain name
-		if (!preg_match("/(^\[?[0-9\.]+\]?$)/", $email_array[1])) {
-			$domain_array = explode(".", $email_array[1]);
-			if (sizeof($domain_array) < 2) {
-				return false; // Not enough parts to domain
-			}
-			for ($i = 0; $i < sizeof($domain_array); $i++) {
-				if (!preg_match("/(^(([A-Za-z0-9][A-Za-z0-9-]{0,61}[A-Za-z0-9])|([A-Za-z0-9]+))$)/",
-					$domain_array[$i])) {
-						return false;
-				}
-			}
-		}
-		return true;
-	}
+  /*
+   * Build the mail form
+   */
+  private function mailgroup_form ($data, $recipientVals){
+    global $USERINFO;
 
-	/**
-	 * Does the groupmail form xhtml creation.
-	 */
-	protected function _groupmail($data){
-		global $conf;
-		global $USERINFO;
+    // Is there none captcha on the side?
+    $captcha = ($this->getConf('captcha') == 1 && syntax_plugin_groupmail::$captcha == false)?true:false;
 
-		// Is there none captcha on the side?
-		$captcha = ($conf['plugin']['groupmail']['captcha'] == 1 && syntax_plugin_groupmail::$captcha == false)?true:false;
+    // Setup send log destination
+    if ( isset($data['sendlog']) )
+      $sendlog = $data['sendlog'];
+    elseif ( '' != $this->getConf('sendlog') )
+      $sendlog = $this->getConf('sendlog');
 
-                // Setup send log destination
-		if      ( isset($data['sendlog']) )
-                   $sendlog = $data['sendlog'];
-                else if ( isset($conf['plugin']['groupmail']['sendlog'])  &&
-                          '' != $conf['plugin']['groupmail']['sendlog']     )
-                   $sendlog = $conf['plugin']['groupmail']['sendlog'];
+    $ret = '<form id="'.$this->formId.'" action="'.$_SERVER['REQUEST_URI'].'#'.$this->formId.'" method="POST">';
 
-		$ret = "<form action=\"".$_SERVER['REQUEST_URI']."#form-".$this->formId."\" method=\"POST\"><a name=\"form-".$this->formId."\"></a>";
-		$ret .= "<table class=\"inline\">";
+    // Send message and give feedback
+    if (isset($_POST['submit-'.$this->formId]))
+      if($this->_send_groupmail($captcha, $sendlog))
+        $ret .= $this->_html_status_box();
 
-		// Send message and give feedback
-		if (isset($_POST['submit-form-'.$this->formId]))
-			if($this->_send_groupmail($captcha, $sendlog))
-				$ret .= $this->_show_message();
+    if (isset($data['subject']))
+      $ret .= '<input type="hidden" name="subject" value="'.$data['subject'].'" />';
 
-		// Build table
-		if (!isset($data['autofrom'])  ||  $data['autofrom'] != 'true' ) {
-		         $ret .= $this->_table_row($this->getLang("name"), 'name', 'text', $USERINFO['name']);
-		         $ret .= $this->_table_row($this->getLang("email"), 'email', 'text', $USERINFO['mail']);
-                }
-		if (!isset($data['subject']))
-                   $ret .= $this->_table_row($this->getLang("subject"), 'subject', 'text');
-		if (isset($data['content']))
-                   $ret .= $this->_table_row($this->getLang("content"), 'content', 'textarea', $data['content']);
-                else
-                   $ret .= $this->_table_row($this->getLang("content"), 'content', 'textarea');
+    foreach (array_keys($recipientVals) as $field) {
+      $ret .= '<input type="hidden" name="'.$field.'" value="'.$data[$field].'" />';
+    }
 
-		// Captcha
-		if($captcha) {
-			if($this->errorFlags["captcha"]) {
-				$ret .= '<style>#recaptcha_response_field { border: 1px solid #e18484 !important; }</style>';
-			}
-			$ret .= "<tr><td colspan=\"2\">"
-			. "<script type=\"text/javascript\">var RecaptchaOptions = { lang : '".$conf['lang']."', "
-			. "theme : '".$conf['plugin']['groupmail']['recaptchalayout']."' };</script>"
-			. recaptcha_get_html($conf['plugin']['groupmail']['recaptchakey'])."</td></tr>";
-			syntax_plugin_groupmail::$captcha = true;
-		}
+    // Build view for form items
+    $ret .= "<fieldset>";
+    if  (isset($data['title'])) {
+      $title = $data['title'];
+    } else {
+      $title = '';
+      $sep = '';
+      if (isset($data['subject'])) { $title .= '"'.$data['subject'].'"'; $sep=' ';  }
+      $and = False;
+      if (isset($data['touser']))  { $title .= $sep.'to '. $data['touser']; $sep=', '; $and=True;}
+      if (isset($data['togroup'])) { $title .= $sep.($and? '': 'to '). $data['togroup']; $sep=', ';}
+      $and = False;
+      if (isset($data['ccuser']))  { $title .= $sep.'cc '.  $data['ccuser']; $sep=', '; $and=True; }
+      if (isset($data['ccgroup'])) { $title .= $sep.($and? '': 'cc ').  $data['ccgroup']; $sep=', ';} 
+      $and = False;
+      if (isset($data['bccuser'])) { $title .= 'bcc '.  $data['bccuser']; $sep=', '; $and=True;} 
+      if (isset($data['bccgroup'])){ $title .= $sep.($and? '': 'bcc ').  $data['bccgroup']; $sep=', ';} 
+    }
+    $ret .= "<legend>".$title."</legend>";
+    if ( !isset($data['autofrom']) || $data['autofrom'] != 'true' ) {
+      $ret .= $this->_form_row($this->getLang("name"), 'name', 'text', $USERINFO['name']);
+      $ret .= $this->_form_row($this->getLang("email"), 'required_email', 'text', $USERINFO['mail']);
+    }
+    if ( !isset($data['subject']) )
+      $ret .= $this->_form_row($this->getLang("subject"), 'subject', 'text');
 
-		$ret .= "</table><p>";
-		if ( isset($data['autofrom'])  &&  $data['autofrom'] == 'true' ) {
-			$ret .= "<input type=\"hidden\" name=\"email\" value=\"".$USERINFO['mail']."\" />";
-			$ret .= "<input type=\"hidden\" name=\"name\" value=\"".$USERINFO['name']."\" />";
-                }
-		if (isset($data['subject']))
-			$ret .= "<input type=\"hidden\" name=\"subject\" value=\"".$data['subject']."\" />";
-		if ( isset($data['touser']) )
-			$ret .= "<input type=\"hidden\" name=\"touser\" value=\"".$data['touser']."\" />";
-		else if ( isset($data['togroup']) )
-			$ret .= "<input type=\"hidden\" name=\"togroup\" value=\"".$data['togroup']."\" />";
-		else if ( isset($data['toemail']) )
-			$ret .= "<input type=\"hidden\" name=\"toemail\" value=\"".$data['toemail']."\" />";
-		
-		if ( isset($data['ccuser']) )
-			$ret .= "<input type=\"hidden\" name=\"ccuser\" value=\"".$data['ccuser']."\" />";
-		else if ( isset($data['ccgroup']) )
-			$ret .= "<input type=\"hidden\" name=\"ccgroup\" value=\"".$data['ccgroup']."\" />";
-		else if ( isset($data['ccemail']) )
-			$ret .= "<input type=\"hidden\" name=\"ccemail\" value=\"".$data['ccemail']."\" />";
+    $ret .= $this->_form_row($this->getLang("content"), 'content', 'textarea',
+      isset($data['content']) ? $data['content'] : '');
 
-		if ( isset($data['bccuser']) )
-			$ret .= "<input type=\"hidden\" name=\"bccuser\" value=\"".$data['bccuser']."\" />";
-		else if ( isset($data['bccgroup']) )
-			$ret .= "<input type=\"hidden\" name=\"bccgroup\" value=\"".$data['bccgroup']."\" />";
-		else if ( isset($data['bccemail']) )
-			$ret .= "<input type=\"hidden\" name=\"bccemail\" value=\"".$data['bccemail']."\" />";
+    // Captcha
+    if($captcha) {
+      if($this->errorFlags["captcha"]) {
+        $ret .= '<style>#recaptcha_response_field { border: 1px solid #e18484 !important; }</style>';
+      }
+      $ret .= "<tr><td colspan='2'>"
+        . "<script type='text/javascript'>var RecaptchaOptions = { lang : '".$conf['lang']."', "
+        . "theme : '".$this->getConf('recaptchalayout')."' };</script>"
+        . recaptcha_get_html($this->getConf('recaptchakey'))."</td></tr>";
+      syntax_plugin_groupmail::$captcha = true;
+    }
 
-		
-		$ret .= "<input type=\"hidden\" name=\"do\" value=\"show\" />";
-		$ret .= "<input type=\"submit\" name=\"submit-form-".$this->formId."\" value=\"".$this->getLang("send")."\" />";
-		$ret .= "</p></form>";
 
-		return $ret;
-	}
+    if (isset($data['autofrom']) && $data['autofrom'] == 'true' ) {
+      $ret .= '<input type="hidden" name="email" value="'.$USERINFO['mail'].'" />';
+      $ret .= '<input type="hidden" name="name" value="'.$USERINFO['name'].'" />';
+    }
 
-	/**
-	 * Show up error messages.
-	 */
-	protected function _show_message() {
-		return '<tr><td colspan="2">'
-		. '<p class="'.(($this->status == 0)?'groupmail_error':'groupmail_success').'">'.$this->statusMessage.'</p>'
-		. '</td></tr>';
-	}
+    $ret .= '<input type="submit" name="submit-'.$this->formId.'" value="'.$this->getLang('send').'" />';
+    $ret .= "</fieldset>";
 
-	/**
-	 * Renders a table row.
-	 */
-	protected function _table_row($label, $name, $type, $default='') {
-		$value = (isset($_POST['submit-form-'.$this->formId]) && $this->status == 0)?$_POST[$name]:$default;
-		$class = ($this->errorFlags[$name])?'class="error_field"':'';
-		$row = '<tr><td>'.$label.'</td><td>';
-		if($type == 'textarea')
-			$row .= '<textarea name="'.$name.'" wrap="on" cols="40" rows="6" '.$class.'>'.$value.'</textarea>';
-		else
-			$row .= '<input type="'.$type.'" value="'.$value.'" name="'.$name.'" '.$class.'>';
-		$row .= '</td></tr>';
-		return $row;
-	}
+    $ret .= "</form>";
+
+    return $ret;
+  }
+
+  private function send_mail ($to, $subject, $content, $from, $cc, $bcc) {
+    // send a mail
+    $mail = new Mailer();
+    $mail->to($to);
+    $mail->cc($cc);
+    $mail->bcc($bcc);
+    $mail->from($from);
+    $mail->subject($subject);
+    $mail->setBody($content);
+    $ok = $mail->send();
+    return $ok;
+  }
+
+  private function _email_list(){ // string, string ...
+    global $auth;
+    $items = array();
+    foreach (func_get_args() as $field) {
+      if (!isset($_REQUEST[$field])) continue;
+      $typ=substr($field, -4);
+      $vals=explode(',' , $_POST[$field]);
+      if ($typ == 'roup') {  # group list type
+        if (!method_exists($auth, "retrieveUsers")) continue;
+        foreach ($vals as $grp) {
+          $userInfoHash = $auth->retrieveUsers(0,-1,array('grps'=>'^'.preg_quote($grp,'/').'$'));
+          foreach ($userInfoHash as $u => $info) { array_push($items, $info['mail']); }
+        }
+      } elseif ($typ == 'user') {  # user list type
+        foreach ($vals as $userId) {
+          $info = $auth->getUserData($userId);
+          if (isset($info)) {
+            array_push($items, $info['mail']);
+          }
+        }
+      } else { # mail list type
+        foreach($email as $vals){  array_push($items, $email); }
+      }
+    }
+    return $items;
+  }
+
+  /**
+   * Check values are somehow valid
+   */
+  private function _validate_value($val, $typ, $as_array=False, $multiline=False){
+    # FIXME improve security if possible
+    if ($as_array) {
+      foreach ($val as $v) { $this->_validate_value($v, $typ, False, $multiline); }
+      return;
+    }
+    if ($typ == 'email' || $typ == 'to' || $typ == 'from' || $typ == 'cc' || $typ == 'bcc') {
+      if(!mail_isvalid($val)) $this->_set_error("valid_".$typ, Null, $typ);
+    }
+    if ((!$multiline  && preg_match("/(\r|\n)/",$val)) || preg_match("/(MIME-Version: )/",$val) || preg_match("/(Content-Type: )/",$val)){
+      $this->_set_error("valid_".$typ, Null, $typ);
+    }
+  }
+
+  /**
+   * Verify and send email content.´
+   */
+  protected function _send_groupmail($captcha=false, $sendlog){
+    global $auth;
+    global $USERINFO;
+    global $ID;
+
+    require_once(DOKU_INC.'inc/mail.php');
+
+    $name  = $_POST['name'];
+    $email = $_POST['email'];
+    $subject = $_POST['subject'];
+    $comment = $_POST['content'];
+
+    // required fields filled
+    if(strlen($_POST['content']) < 10) $this->_set_error('content');
+    if(strlen($name) < 2) $this->_set_error('name');
+
+    // checks recaptcha answer
+    if($this->getConf('captcha') == 1 && $captcha == true) {
+      $resp = recaptcha_check_answer ($this->getConf('recaptchasecret'),
+        $_SERVER["REMOTE_ADDR"],
+        $_POST["recaptcha_challenge_field"],
+        $_POST["recaptcha_response_field"]);
+      if (!$resp->is_valid) $this->_set_error('captcha');
+    }
+
+    // record email in log
+    $lastline = '';
+    if ( isset($sendlog)  &&  $sendlog != '' ) {
+      $targetpage = htmlspecialchars(trim($sendlog));
+      $oldrecord = rawWiki($targetpage);
+      $bytes = bin2hex(random_bytes(8));
+      $newrecord = '====== msg'.$bytes.' ======'."\n";
+      $newrecord .= "**<nowiki>".$subject."</nowiki>** \n";
+      $newrecord .= '//'.$this->getLang("from").' '.$name.($this->getConf('confidentiality') =='all'?' <'.$email.'>':'');
+      $newrecord .= ' '.strftime($this->getLang("datetime"))."//\n";
+      $newrecord .= "\n<code>\n".trim($comment,"\n\t ")."\n</code>\n\n";
+      saveWikiText($targetpage, $newrecord.$oldrecord, "New entry", true);
+      $lastline .= $this->getLang("viewonline").wl($ID,'', true).'?id='.$targetpage."#msg".$bytes."\n\n\n";
+
+      $this->statusMessage = $this->getLang("viewonline").'<a href="'.wl($ID,'', true).'?id='.$targetpage."#msg".$bytes.'">'.$bytes."</a>";
+    }
+
+    $comment .= "\n\n";
+    $comment .= '---------------------------------------------------------------'."\n";
+    $comment .= $this->getLang("sent by")." ".$name.' <'.$email.'>'."\n";
+    $comment .= $this->getLang("via").wl($ID,'',true)."\n";
+    $comment .= $lastline;
+
+    $to = $this->_email_list('toemail', 'touser', 'togroup');
+    if (count($to) == 0) { 
+      array_push($to, $this->getConf('default'));
+    }
+
+    $ccs = array_diff($this->_email_list('ccemail', 'ccuser', 'ccgroup'), $to);
+    $bccs = array_diff($this->_email_list('bccemail', 'bccuser', 'bccgroup'), $to, $ccs);
+
+    // A bunch of tests to secure content
+    $this->_validate_value($name, 'name');
+    $this->_validate_value($email, 'email');
+    $this->_validate_value($subject, 'subject');
+    $this->_validate_value($to, 'to', True);
+    $this->_validate_value($css, 'cc', True);
+    $this->_validate_value($bccs, 'bcc', True);
+    $this->_validate_value($comment, 'content', False, True);
+
+    // Status has not changed.
+    if($this->status != 0) {
+      // send only if message is not empty
+      // this should never be the case anyway because the form has
+      // validation to ensure a non-empty comment
+      if (trim($comment, " \t") != ''){
+        if ($this->send_mail($to, $subject, $comment, $email, $ccs, $bccs)){
+          $this->statusMessage = $this->getLang("success")."\n".$this->statusMessage;
+        } else {
+          $this->_set_error('unknown');
+        }
+      }
+    }
+
+    return true;
+  }
+
+  /**
+   * Manage error messages.
+   */
+  protected function _set_error($msgid, $args=Null, $type=Null) {
+    $lang = $this->getLang("error");
+    if (is_null($type)) $type=$msgid;
+    $msgstr = $lang[$msgid];
+    if (!is_null($args)){
+      $msgstr = vprintf($msgstr, $args);
+    }
+    $this->status = 0;
+    $this->statusMessage .= empty($this->statusMessage)?$msgstr:'<br>'.$msgstr;
+    $this->errorFlags[$type] = true;
+  }
+
+  /**
+   * Show up error messages.
+   */
+  protected function _html_status_box() {
+    $res = '<p class="'.(($this->status == 0)?'groupmail_error':'groupmail_success').'">'.$this->statusMessage.'</p>';
+    $this->statusMessage = '';
+    $this->errorFlags = array();
+    return $res;
+  }
+
+  /**
+   * Renders a form row.
+   */
+  protected function _form_row($label, $name, $type, $default='') {
+    $value = (isset($_POST['submit-'.$this->formId]) && $this->status == 0)?$_POST[$name]:$default;
+    $class = ($this->errorFlags[$name])?'class="error_field"':'';
+    $row = '<label for="'.$name.'">'.$label.'</label>';
+    if($type == 'textarea')
+      $row .= '<textarea name="'.$name.'" wrap="on" cols="40" rows="6" '.$class.' required>'.$value.'</textarea>';
+    elseif($type == 'multiple_email')
+      $row .= '<input type="email" name="'.$name.'" '.$class.' multiple>';
+    elseif($type == 'required_email')
+      $row .= '<input type="email" name="'.$name.'" '.$class.' required>';
+    else
+      $row .= '<input type="'.$type.'" value="'.$value.'" name="'.$name.'" '.$class.'>';
+    return $row;
+  }
 
 }
