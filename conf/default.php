@@ -6,10 +6,15 @@
  * @author Bob Baddeley <bob@bobbaddeley.com>
  * @author Marvin Thomas Rabe <mrabe@marvinrabe.de>
  * @author Roland Wunderling <bzfwunde@gmail.com>
+ * @author Luffah <contact@luffah.xyz>
  */
 
-$conf['default'] = 'Roland@localhost';
-$conf['sendlog'] = ':groupmail:log';
+$conf['sender_groups'] = 'admin';
+$conf['recipient_groups'] = 'admin,user';
+$conf['default'] = 'user@localhost';
+$conf['allow_email'] = 0;
+$conf['confidentiality'] = 'bcc';
+$conf['sendlog'] = '';
 $conf['captcha'] = 0;
 $conf['recaptchakey'] = '';
 $conf['recaptchasecret'] = '';

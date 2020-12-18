@@ -24,9 +24,8 @@ $lang["content"] = 'Сообщение';
 $lang["send"] = 'Отправить';
 
 // FIXME - provide translation:
-$lang["date"] = 'Date';
-$lang["time"] = 'Time';
-$lang["from"] = 'From';
+$lang["from"] = 'отправлено ';
+$lang["datetime"] = ' в %Y-%m-%d %H:%M'; 
 $lang["sent by"] = 'sent by';
 $lang["via"] = 'via DokuWiki at ';
 $lang["viewonline"] = 'view the message online at ';

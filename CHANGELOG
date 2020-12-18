@@ -1,3 +1,8 @@
+2020-04-03 Luffah <contact@luffah.xyz>
+* bug with multiple bccgroup
+* lint / simplify code (use mail_isvalid from dokuwiki core;
+  add generic functions to validate fields and extract emails)
+
 2018-12-06 David Cabernel <dcabernel@gmail.com>
 
 * bug with bccgroup fixed
